@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == 'medslaoui14563@gmail.com';
+    }
+
+    function isAuthorizedNonAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == 'iphone14563@gmail.com';
+    }
+
+    function isAuthorizedUser() {
+      return isAdmin() || isAuthorizedNonAdmin();
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // Country collections
+    match /morocco/{document=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if isAdmin();
+    }
+
+    match /egypt/{document=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if isAdmin();
+    }
+
+    match /africa/{document=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if isAdmin();
+    }
+
+    // Schedules
+    match /schedules/{scheduleId} {
+      allow read: if isAuthorizedUser();
+      allow write: if isAdmin();
+    }
+
+    // Published schedules subcollection
+    match /schedules/{scheduleId}/published/{document=**} {
+      allow read: if isAuthorizedUser();
+      allow write: if isAdmin();
+    }
+
+    // Admin-only collections
+    match /employees/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /analytics/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /archive/{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
