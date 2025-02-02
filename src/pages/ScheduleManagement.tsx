@@ -39,6 +39,9 @@ import { db } from '../config/firebase';
 import EditScheduleDialog from '../components/EditScheduleDialog';
 import LoadingAnimation from '../components/LoadingAnimation';
 import { isScheduleExpired } from '../utils/worldTime';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 interface Agent {
   id: string;
@@ -555,12 +558,17 @@ export default function ScheduleManagement() {
       case 1:
         return (
           <Box sx={{ mt: 2 }}>
-            <DatePicker
-              label="Schedule Date"
-              value={selectedDate}
-              onChange={(newValue) => setSelectedDate(newValue)}
-              sx={{ width: '100%', mb: 2 }}
-            />
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DatePicker
+                label="Schedule Date"
+                value={selectedDate}
+                onChange={(newValue) => setSelectedDate(newValue)}
+                sx={{ width: '100%', mb: 2 }}
+                renderInput={(params) => (
+                  <TextField {...params} />
+                )}
+              />
+            </LocalizationProvider>
             <TextField
               margin="dense"
               name="seniorName"
