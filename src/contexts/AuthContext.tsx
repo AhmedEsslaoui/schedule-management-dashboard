@@ -31,8 +31,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function checkUserAccess(email: string | null): { isAdmin: boolean; isAuthorizedUser: boolean } {
     if (!email) return { isAdmin: false, isAuthorizedUser: false };
     
-    // Admin user
-    if (email === 'medslaoui14563@gmail.com') {
+    // Admin users
+    const adminEmails = [
+      'medslaoui14563@gmail.com',
+      'ahmed.esslaoui@indriver.com'
+    ];
+    
+    if (adminEmails.includes(email)) {
       return { isAdmin: true, isAuthorizedUser: true };
     }
     

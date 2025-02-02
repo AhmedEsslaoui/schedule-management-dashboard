@@ -8,8 +8,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      let adminEmails = [
+        'medslaoui14563@gmail.com',
+        'ahmed.esslaoui@indriver.com'
+      ];
       return isAuthenticated() && 
-             request.auth.token.email == 'medslaoui14563@gmail.com';
+             adminEmails.hasAny([request.auth.token.email]);
     }
 
     function isAuthorizedNonAdmin() {
