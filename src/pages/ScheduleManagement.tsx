@@ -112,7 +112,7 @@ export default function ScheduleManagement() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string>('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
@@ -133,6 +133,7 @@ export default function ScheduleManagement() {
   const [agentSearchQuery, setAgentSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [viewingSchedule, setViewingSchedule] = useState<Schedule | null>(null);
+  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
 
   useEffect(() => {
     // Subscribe to schedules collection
@@ -514,7 +515,7 @@ export default function ScheduleManagement() {
                         borderColor: 'primary.main',
                       },
                     }}
-                    onClick={() => setCreationMethod('manual')}
+                    onClick={() => handleCreationMethodSelect('manual')}
                   >
                     <Box sx={{ textAlign: 'center' }}>
                       <EditIcon sx={{ fontSize: 40, mb: 1, color: 'primary.main' }} />
@@ -538,7 +539,7 @@ export default function ScheduleManagement() {
                         borderColor: 'primary.main',
                       },
                     }}
-                    onClick={() => setCreationMethod('automatic')}
+                    onClick={() => handleCreationMethodSelect('automatic')}
                   >
                     <Box sx={{ textAlign: 'center' }}>
                       <AutoFixHighIcon sx={{ fontSize: 40, mb: 1, color: 'primary.main' }} />
@@ -546,7 +547,7 @@ export default function ScheduleManagement() {
                         Automatic Creation
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Let the system automatically generate an optimized schedule (Coming Soon)
+                        Let the system automatically generate an optimized schedule (Beta Testing)
                       </Typography>
                     </Box>
                   </Card>
@@ -859,10 +860,13 @@ export default function ScheduleManagement() {
                               hasBreak: includeBreak 
                             }]
                           }]);
+                          // Set the new agent as expanded
+                          setExpandedAgent(employee.id);
                         }
 
                         // Reset selections
-                        setSelectedTimeSlot('');
+                        const nextSlot = selectNextTimeSlot(selectedTimeSlot);
+                        setSelectedTimeSlot(nextSlot);
                         setSelectedTaskType('Chat');
                         setIncludeBreak(false);
                       }}
@@ -883,9 +887,10 @@ export default function ScheduleManagement() {
                   {agents.map((agent, agentIndex) => (
                     <Accordion 
                       key={agent.id} 
-                      // onChange={(_, isExpanded) => {
-                      //   setExpandedAgent(isExpanded ? agent.id : null);
-                      // }}
+                      expanded={expandedAgent === agent.id}
+                      onChange={(_, isExpanded) => {
+                        setExpandedAgent(isExpanded ? agent.id : null);
+                      }}
                     >
                       <AccordionSummary
                         expandIcon={<ExpandMoreIcon />}
@@ -963,6 +968,20 @@ export default function ScheduleManagement() {
       default:
         return 'Unknown step';
     }
+  };
+
+  const selectNextTimeSlot = (currentSlot: string) => {
+    const timeSlots = generateTimeSlots();
+    const currentIndex = timeSlots.findIndex(slot => slot === currentSlot);
+    if (currentIndex !== -1 && currentIndex < timeSlots.length - 1) {
+      return timeSlots[currentIndex + 1];
+    }
+    return '';
+  };
+
+  const handleCreationMethodSelect = (method: 'manual' | 'automatic') => {
+    setCreationMethod(method);
+    setSelectedDate(new Date()); // Set today's date when selecting creation method
   };
 
   return (

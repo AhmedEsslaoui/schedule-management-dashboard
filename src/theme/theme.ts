@@ -65,6 +65,34 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
@@ -189,6 +217,34 @@ export const lightTheme = createTheme({
     },
   },
   components: {
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
@@ -273,6 +329,34 @@ export const darkTheme = createTheme({
   },
   typography: lightTheme.typography,
   components: {
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          '&:focus': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            outline: 'none',
+            boxShadow: 'none',
+          },
+        },
+      },
+    },
     ...lightTheme.components,
     MuiCard: {
       styleOverrides: {
