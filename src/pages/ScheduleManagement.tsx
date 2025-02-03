@@ -32,8 +32,19 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Chip
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Publish as PublishIcon, AutoFixHigh as AutoFixHighIcon, Archive as ArchiveIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { 
+  Add as AddIcon, 
+  Edit as EditIcon, 
+  Delete as DeleteIcon, 
+  Publish as PublishIcon, 
+  AutoFixHigh as AutoFixHighIcon, 
+  Archive as ArchiveIcon, 
+  ExpandMore as ExpandMoreIcon,
+  Visibility as VisibilityIcon,
+  Close as CloseIcon
+} from '@mui/icons-material';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import EditScheduleDialog from '../components/EditScheduleDialog';
@@ -138,6 +149,8 @@ export default function ScheduleManagement() {
   const [loading, setLoading] = useState(true);
   const [viewingSchedule, setViewingSchedule] = useState<Schedule | null>(null);
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedViewSchedule, setSelectedViewSchedule] = useState<Schedule | null>(null);
 
   useEffect(() => {
     // Subscribe to schedules collection
@@ -497,6 +510,16 @@ export default function ScheduleManagement() {
 
   const handleCloseViewDialog = () => {
     setViewingSchedule(null);
+  };
+
+  const handleViewDetails = (schedule: Schedule) => {
+    setSelectedViewSchedule(schedule);
+    setDetailsOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsOpen(false);
+    setSelectedViewSchedule(null);
   };
 
   const getStepContent = (step: number) => {
@@ -910,35 +933,17 @@ export default function ScheduleManagement() {
                           <Table size="small">
                             <TableHead>
                               <TableRow>
-                                <TableCell>Time Slot</TableCell>
-                                <TableCell>Task</TableCell>
-                                <TableCell align="right">Actions</TableCell>
+                                <TableCell width="30%">Time Slot</TableCell>
+                                <TableCell width="50%">Task</TableCell>
+                                <TableCell width="20%" align="center">Actions</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
                               {agent.tasks.map((task, taskIndex) => (
                                 <TableRow key={`${agent.id}-${taskIndex}`}>
-                                  <TableCell>{task.timeSlot}</TableCell>
-                                  <TableCell>
-                                    {task.taskType}
-                                    {task.hasBreak && (
-                                      <Typography 
-                                        component="span" 
-                                        sx={{ 
-                                          ml: 1,
-                                          color: 'primary.main',
-                                          bgcolor: 'primary.light',
-                                          px: 1,
-                                          py: 0.25,
-                                          borderRadius: 1,
-                                          fontSize: '0.75rem'
-                                        }}
-                                      >
-                                        +1hr Break
-                                      </Typography>
-                                    )}
-                                  </TableCell>
-                                  <TableCell align="right">
+                                  <TableCell width="30%">{task.timeSlot}</TableCell>
+                                  <TableCell width="50%">{task.taskType}</TableCell>
+                                  <TableCell width="20%" align="center">
                                     <IconButton
                                       size="small"
                                       color="error"
@@ -1040,10 +1045,17 @@ export default function ScheduleManagement() {
                 </TableCell>
                 <TableCell>{schedule.agents?.length || 0}</TableCell>
                 <TableCell align="right">
+                  <IconButton 
+                    onClick={() => handleViewDetails(schedule)}
+                    size="small"
+                    sx={{ mr: 1 }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
                   <IconButton
-                    color="primary"
                     onClick={() => handleViewSchedule(schedule)}
-                    title="View Details"
+                    size="small"
+                    sx={{ mr: 1 }}
                   >
                     <EditIcon />
                   </IconButton>
@@ -1142,6 +1154,91 @@ export default function ScheduleManagement() {
           }}
         />
       )}
+
+      {/* View Schedule Details Dialog */}
+      <Dialog
+        open={detailsOpen}
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Schedule Details
+          <IconButton
+            onClick={handleCloseDetails}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedViewSchedule && (
+            <Box>
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Date</Typography>
+                  <Typography>{new Date(selectedViewSchedule.date).toLocaleDateString()}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Time Frame</Typography>
+                  <Typography>{selectedViewSchedule.timeFrame}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Senior</Typography>
+                  <Typography>{selectedViewSchedule.seniorName}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Country</Typography>
+                  <Typography>{selectedViewSchedule.country}</Typography>
+                </Grid>
+              </Grid>
+
+              <Typography variant="h6" gutterBottom>Assignments</Typography>
+              {selectedViewSchedule.agents.map((agent, agentIndex) => (
+                <Box key={agent.id} sx={{ mb: agentIndex < selectedViewSchedule.agents.length - 1 ? 3 : 0 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                    {agent.name}
+                  </Typography>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                          <TableCell width="30%">Time Slot</TableCell>
+                          <TableCell width="50%">Task</TableCell>
+                          <TableCell width="20%" align="center">Break</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {agent.tasks.sort((a, b) => {
+                          const [aStart] = a.timeSlot.split(' - ');
+                          const [bStart] = b.timeSlot.split(' - ');
+                          return aStart.localeCompare(bStart);
+                        }).map((task, taskIndex) => (
+                          <TableRow key={taskIndex}>
+                            <TableCell width="30%">{task.timeSlot}</TableCell>
+                            <TableCell width="50%">{task.taskType}</TableCell>
+                            <TableCell width="20%" align="center">
+                              {task.hasBreak ? (
+                                <Chip 
+                                  label="Break" 
+                                  size="small" 
+                                  color="primary" 
+                                  variant="outlined"
+                                  sx={{ minWidth: '70px' }}
+                                />
+                              ) : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

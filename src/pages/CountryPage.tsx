@@ -8,12 +8,25 @@ import {
   AccordionSummary,
   AccordionDetails,
   Grid,
-  Chip
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import WbTwilightIcon from '@mui/icons-material/WbTwilight';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CloseIcon from '@mui/icons-material/Close';
+
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { formatTimeSlot } from '../utils/timeZones';
@@ -88,6 +101,8 @@ export default function CountryPage() {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [expandedAgent, setExpandedAgent] = useState<string | false>(false);
   const [loading, setLoading] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedViewSchedule, setSelectedViewSchedule] = useState<Schedule | null>(null);
 
   useEffect(() => {
     if (!countryId) {
@@ -154,23 +169,12 @@ export default function CountryPage() {
     'Night': 2
   };
 
-  // Sort schedules by date and timeFrame
-  const sortedSchedules = [...schedules].sort((a, b) => {
-    // First sort by date
-    const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (dateComparison !== 0) return dateComparison;
-    
-    // Then sort by timeFrame
-    return (timeFrameOrder[a.timeFrame] || 0) - (timeFrameOrder[b.timeFrame] || 0);
-  });
-
   const handleAccordionChange = (scheduleId: string, agentId: string) => 
     (_event: React.SyntheticEvent, isExpanded: boolean) => {
       setExpandedAgent(isExpanded ? `${scheduleId}-${agentId}` : false);
     };
 
   const formatTaskTime = (timeSlot: string): string => {
-    // Check if the time is in "HH:00 - HH:00" format
     const match = timeSlot.match(/^(\d{1,2}):00 - (\d{1,2}):00$/);
     if (match) {
       const startHour = parseInt(match[1]);
@@ -180,6 +184,16 @@ export default function CountryPage() {
     return timeSlot;
   };
 
+  const handleViewDetails = (schedule: Schedule) => {
+    setSelectedViewSchedule(schedule);
+    setDetailsOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsOpen(false);
+    setSelectedViewSchedule(null);
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -187,6 +201,13 @@ export default function CountryPage() {
       </Box>
     );
   }
+
+  const sortedSchedules = [...schedules].sort((a, b) => {
+    const dateComparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (dateComparison !== 0) return dateComparison;
+    
+    return (timeFrameOrder[a.timeFrame] || 0) - (timeFrameOrder[b.timeFrame] || 0);
+  });
 
   return (
     <Box sx={{ p: 3 }}>
@@ -231,7 +252,17 @@ export default function CountryPage() {
                       />
                     );
                   })()}
-                  <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 'auto' }}>
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewDetails(schedule);
+                    }}
+                    size="small"
+                    sx={{ ml: 'auto', mr: 1 }}
+                  >
+                    <VisibilityIcon />
+                  </IconButton>
+                  <Typography variant="subtitle1" color="text.secondary">
                     Senior: {schedule.seniorName}
                   </Typography>
                 </Box>
@@ -368,6 +399,91 @@ export default function CountryPage() {
           No published schedules found for {formattedCountry}
         </Typography>
       )}
+      
+      {/* View Schedule Details Dialog */}
+      <Dialog
+        open={detailsOpen}
+        onClose={handleCloseDetails}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          Schedule Details
+          <IconButton
+            onClick={handleCloseDetails}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedViewSchedule && (
+            <Box>
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Date</Typography>
+                  <Typography>{new Date(selectedViewSchedule.date).toLocaleDateString()}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Time Frame</Typography>
+                  <Typography>{selectedViewSchedule.timeFrame}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Senior</Typography>
+                  <Typography>{selectedViewSchedule.seniorName}</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="subtitle2">Country</Typography>
+                  <Typography>{selectedViewSchedule.country}</Typography>
+                </Grid>
+              </Grid>
+
+              <Typography variant="h6" gutterBottom>Assignments</Typography>
+              {selectedViewSchedule.agents.map((agent, agentIndex) => (
+                <Box key={agent.id} sx={{ mb: agentIndex < selectedViewSchedule.agents.length - 1 ? 3 : 0 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                    {agent.name}
+                  </Typography>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                          <TableCell width="30%">Time Slot</TableCell>
+                          <TableCell width="50%">Task</TableCell>
+                          <TableCell width="20%" align="center">Break</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {agent.tasks.sort((a, b) => {
+                          const [aStart] = a.timeSlot.split(' - ');
+                          const [bStart] = b.timeSlot.split(' - ');
+                          return aStart.localeCompare(bStart);
+                        }).map((task, taskIndex) => (
+                          <TableRow key={taskIndex}>
+                            <TableCell width="30%">{formatTaskTime(task.timeSlot)}</TableCell>
+                            <TableCell width="50%">{task.taskType}</TableCell>
+                            <TableCell width="20%" align="center">
+                              {task.hasBreak ? (
+                                <Chip 
+                                  label="Break" 
+                                  size="small" 
+                                  color="primary" 
+                                  variant="outlined"
+                                  sx={{ minWidth: '70px' }}
+                                />
+                              ) : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
