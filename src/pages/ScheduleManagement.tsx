@@ -32,7 +32,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Chip
+  Chip,
+  Collapse
 } from '@mui/material';
 import { 
   Add as AddIcon, 
@@ -122,6 +123,19 @@ const taskTypes = [
 const countries = ['Egypt', 'Morocco', 'Africa'];
 const steps = ['Creation Method', 'Basic Information', 'Time Configuration', 'Agent Assignment'];
 
+const getTimeSlots = (timeFrame: string) => {
+  switch (timeFrame) {
+    case 'Day':
+      return ['08:00 - 10:00', '10:00 - 12:00', '12:00 - 14:00', '14:00 - 16:00', '16:00 - 18:00', '18:00 - 20:00'];
+    case 'Afternoon':
+      return ['12:00 - 14:00', '14:00 - 16:00', '16:00 - 18:00', '18:00 - 20:00', '20:00 - 22:00', '22:00 - 00:00'];
+    case 'Night':
+      return ['20:00 - 22:00', '22:00 - 00:00', '00:00 - 02:00', '02:00 - 04:00', '04:00 - 06:00', '06:00 - 08:00'];
+    default:
+      return [];
+  }
+};
+
 export default function ScheduleManagement() {
   const [activeStep, setActiveStep] = useState(0);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -148,7 +162,7 @@ export default function ScheduleManagement() {
   const [agentSearchQuery, setAgentSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [viewingSchedule, setViewingSchedule] = useState<Schedule | null>(null);
-  const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
+  const [expandedSchedules, setExpandedSchedules] = useState<string[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedViewSchedule, setSelectedViewSchedule] = useState<Schedule | null>(null);
 
@@ -850,59 +864,17 @@ export default function ScheduleManagement() {
                     <Button
                       variant="contained"
                       fullWidth
-                      onClick={() => {
-                        if (!selectedAgent || !selectedTimeSlot || !selectedTaskType) return;
-
-                        const employee = employees.find(emp => emp.id === selectedAgent);
-                        if (!employee) return;
-
-                        // Check if agent already exists
-                        const existingAgentIndex = agents.findIndex(a => a.id === selectedAgent);
-                        
-                        if (existingAgentIndex !== -1) {
-                          // Add task to existing agent
-                          if (agents[existingAgentIndex].tasks.some(t => t.timeSlot === selectedTimeSlot)) {
-                            alert('This time slot is already assigned');
-                            return;
-                          }
-                          
-                          setAgents(prev => prev.map((agent, index) => 
-                            index === existingAgentIndex
-                              ? {
-                                  ...agent,
-                                  tasks: [...agent.tasks, { 
-                                    timeSlot: selectedTimeSlot, 
-                                    taskType: selectedTaskType,
-                                    hasBreak: includeBreak 
-                                  }]
-                                }
-                              : agent
-                          ));
-                        } else {
-                          // Add new agent with task
-                          setAgents(prev => [...prev, {
-                            id: employee.id,
-                            name: employee.fullName,
-                            tasks: [{ 
-                              timeSlot: selectedTimeSlot, 
-                              taskType: selectedTaskType,
-                              hasBreak: includeBreak 
-                            }]
-                          }]);
-                          // Set the new agent as expanded
-                          setExpandedAgent(employee.id);
-                        }
-
-                        // Reset selections
-                        const nextSlot = selectNextTimeSlot(selectedTimeSlot);
-                        setSelectedTimeSlot(nextSlot);
-                        setSelectedTaskType('Chat');
-                        setIncludeBreak(false);
-                      }}
+                      onClick={handleAddTask}
                       disabled={!selectedAgent || !selectedTimeSlot || !selectedTaskType}
                     >
                       Assign
                     </Button>
+                  </Grid>
+
+                  <Grid item xs={12} sm={12}>
+                    <Typography variant="body2" color="text.secondary">
+                      Note: Ensure correct time slot format (HH:MM - HH:MM)
+                    </Typography>
                   </Grid>
                 </Grid>
               </Paper>
@@ -913,64 +885,58 @@ export default function ScheduleManagement() {
                   <Typography variant="subtitle1" gutterBottom>
                     Assigned Tasks
                   </Typography>
-                  {agents.map((agent, agentIndex) => (
-                    <Accordion 
-                      key={agent.id} 
-                      expanded={expandedAgent === agent.id}
-                      onChange={(_, isExpanded) => {
-                        setExpandedAgent(isExpanded ? agent.id : null);
-                      }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        aria-controls={`agent-${agent.id}-content`}
-                        id={`agent-${agent.id}-header`}
-                      >
-                        <Typography>{agent.name}</Typography>
-                      </AccordionSummary>
-                      <AccordionDetails>
-                        <TableContainer>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell width="30%">Time Slot</TableCell>
-                                <TableCell width="50%">Task</TableCell>
-                                <TableCell width="20%" align="center">Actions</TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {agent.tasks.map((task, taskIndex) => (
-                                <TableRow key={`${agent.id}-${taskIndex}`}>
-                                  <TableCell width="30%">{task.timeSlot}</TableCell>
-                                  <TableCell width="50%">{task.taskType}</TableCell>
-                                  <TableCell width="20%" align="center">
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() => {
-                                        setAgents(prev => {
-                                          const updatedAgents = prev.map(a => {
-                                            if (a.id === agent.id) {
-                                              const updatedTasks = a.tasks.filter((_, i) => i !== taskIndex);
-                                              return updatedTasks.length ? { ...a, tasks: updatedTasks } : null;
-                                            }
-                                            return a;
-                                          }).filter(Boolean) as Agent[];
-                                          return updatedAgents;
-                                        });
-                                      }}
-                                    >
-                                      <DeleteIcon />
-                                    </IconButton>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      </AccordionDetails>
-                    </Accordion>
-                  ))}
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 'bold' }}>Agent</TableCell>
+                          {generateTimeSlots().map((slot) => (
+                            <TableCell key={slot} align="center" sx={{ fontWeight: 'bold' }}>
+                              {slot}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {agents.map((agent) => (
+                          <TableRow key={agent.id}>
+                            <TableCell sx={{ fontWeight: 500 }}>{agent.name}</TableCell>
+                            {generateTimeSlots().map((timeSlot) => {
+                              const task = agent.tasks.find(t => t.timeSlot === timeSlot);
+                              return (
+                                <TableCell key={timeSlot} align="center">
+                                  {task ? (
+                                    <Box>
+                                      <Typography variant="body2">
+                                        {task.taskType}
+                                      </Typography>
+                                      {task.hasBreak && (
+                                        <Chip
+                                          label="Break"
+                                          size="small"
+                                          color="primary"
+                                          variant="outlined"
+                                          sx={{ mt: 0.5, minWidth: '70px' }}
+                                        />
+                                      )}
+                                      <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => handleRemoveTask(agent.id, timeSlot)}
+                                        sx={{ ml: 1 }}
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </Box>
+                                  ) : '-'}
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
                 </Paper>
               )}
             </Box>
@@ -979,6 +945,46 @@ export default function ScheduleManagement() {
       default:
         return 'Unknown step';
     }
+  };
+
+  const handleAddTask = () => {
+    if (!selectedAgent || !selectedTimeSlot || !selectedTaskType) return;
+
+    setAgents(prev => prev.map(agent => {
+      if (agent.id === selectedAgent) {
+        // Check if a task already exists for this time slot
+        const existingTaskIndex = agent.tasks.findIndex(t => t.timeSlot === selectedTimeSlot);
+        if (existingTaskIndex !== -1) {
+          // Update existing task
+          const updatedTasks = [...agent.tasks];
+          updatedTasks[existingTaskIndex] = {
+            timeSlot: selectedTimeSlot,
+            taskType: selectedTaskType,
+            hasBreak: includeBreak
+          };
+          return { ...agent, tasks: updatedTasks };
+        } else {
+          // Add new task
+          return {
+            ...agent,
+            tasks: [
+              ...agent.tasks,
+              {
+                timeSlot: selectedTimeSlot,
+                taskType: selectedTaskType,
+                hasBreak: includeBreak
+              }
+            ]
+          };
+        }
+      }
+      return agent;
+    }));
+
+    // Clear selections
+    setSelectedTimeSlot('');
+    setSelectedTaskType('Chat');
+    setIncludeBreak(false);
   };
 
   const selectNextTimeSlot = (currentSlot: string) => {
@@ -993,6 +999,18 @@ export default function ScheduleManagement() {
   const handleCreationMethodSelect = (method: 'manual' | 'automatic') => {
     setCreationMethod(method);
     setSelectedDate(new Date()); // Set today's date when selecting creation method
+  };
+
+  const handleToggleSchedule = (scheduleId: string) => {
+    setExpandedSchedules(prev => {
+      if (prev.includes(scheduleId)) {
+        return prev.filter(id => id !== scheduleId);
+      }
+      if (prev.length >= 2) {
+        return [prev[1], scheduleId];
+      }
+      return [...prev, scheduleId];
+    });
   };
 
   return (
@@ -1017,75 +1035,160 @@ export default function ScheduleManagement() {
               <TableCell>Time Frame</TableCell>
               <TableCell>Senior</TableCell>
               <TableCell>Country</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Agents</TableCell>
+              <TableCell align="right">Agents</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {schedules.map((schedule) => (
-              <TableRow key={schedule.id}>
-                <TableCell>{new Date(schedule.date).toLocaleDateString()}</TableCell>
-                <TableCell>{schedule.timeFrame}</TableCell>
-                <TableCell>{schedule.seniorName}</TableCell>
-                <TableCell>{schedule.country}</TableCell>
-                <TableCell>
-                  <Box
-                    sx={{
-                      backgroundColor: schedule.status === 'published' ? 'success.main' : schedule.status === 'archived' ? 'error.main' : 'warning.main',
-                      color: 'white',
-                      py: 0.5,
-                      px: 1,
-                      borderRadius: 1,
-                      display: 'inline-block'
-                    }}
-                  >
-                    {schedule.status}
-                  </Box>
-                </TableCell>
-                <TableCell>{schedule.agents?.length || 0}</TableCell>
-                <TableCell align="right">
-                  <IconButton 
-                    onClick={() => handleViewDetails(schedule)}
-                    size="small"
-                    sx={{ mr: 1 }}
-                  >
-                    <VisibilityIcon />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => handleViewSchedule(schedule)}
-                    size="small"
-                    sx={{ mr: 1 }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  {schedule.status === 'draft' && (
-                    <IconButton
-                      color="success"
-                      onClick={() => handlePublishSchedule(schedule.id)}
-                      title="Publish"
-                    >
-                      <PublishIcon />
-                    </IconButton>
-                  )}
-                  {schedule.status !== 'archived' && (
-                    <IconButton
-                      color="default"
-                      onClick={() => handleArchiveSchedule(schedule)}
-                      title="Archive Schedule"
-                    >
-                      <ArchiveIcon />
-                    </IconButton>
-                  )}
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDeleteSchedule(schedule.id)}
-                    title="Delete"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
+              <React.Fragment key={schedule.id}>
+                <TableRow
+                  sx={{
+                    '& > *': { borderBottom: 'unset' },
+                    cursor: 'pointer',
+                    backgroundColor: expandedSchedules.includes(schedule.id) ? 'action.selected' : 'inherit',
+                    '&:hover': {
+                      backgroundColor: expandedSchedules.includes(schedule.id) ? 'action.selected' : 'action.hover',
+                    },
+                  }}
+                  onClick={() => handleToggleSchedule(schedule.id)}
+                >
+                  <TableCell>{new Date(schedule.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{schedule.timeFrame}</TableCell>
+                  <TableCell>{schedule.seniorName}</TableCell>
+                  <TableCell>{schedule.country}</TableCell>
+                  <TableCell align="right">{schedule.agents?.length || 0}</TableCell>
+                  <TableCell align="right">
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                      <Box
+                        sx={{
+                          backgroundColor: schedule.status === 'published' ? 'success.main' : schedule.status === 'archived' ? 'error.main' : 'warning.main',
+                          color: 'white',
+                          py: 0.5,
+                          px: 1,
+                          borderRadius: 1,
+                          mr: 2,
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        {schedule.status}
+                      </Box>
+                      <IconButton 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDetails(schedule);
+                        }}
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        <VisibilityIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewSchedule(schedule);
+                        }}
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      {schedule.status === 'draft' && (
+                        <IconButton
+                          color="success"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePublishSchedule(schedule.id);
+                          }}
+                          size="small"
+                          sx={{ mr: 1 }}
+                        >
+                          <PublishIcon />
+                        </IconButton>
+                      )}
+                      <IconButton
+                        color="default"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleArchiveSchedule(schedule);
+                        }}
+                        size="small"
+                        sx={{ mr: 1 }}
+                      >
+                        <ArchiveIcon />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSchedule(schedule.id);
+                        }}
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                    <Collapse in={expandedSchedules.includes(schedule.id)} timeout="auto" unmountOnExit>
+                      <Box sx={{ margin: 1 }}>
+                        <Typography variant="subtitle1" gutterBottom component="div">
+                          Schedule Details
+                        </Typography>
+                        <TableContainer>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                                <TableCell sx={{ fontWeight: 'bold' }}>Agent</TableCell>
+                                {getTimeSlots(schedule.timeFrame).map((slot) => (
+                                  <TableCell key={slot} align="center" sx={{ fontWeight: 'bold', minWidth: '150px' }}>
+                                    {slot}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {schedule.agents?.map((agent) => (
+                                <TableRow key={agent.id}>
+                                  <TableCell sx={{ fontWeight: 500 }}>{agent.name}</TableCell>
+                                  {getTimeSlots(schedule.timeFrame).map((timeSlot) => {
+                                    const task = agent.tasks?.find(t => t.timeSlot === timeSlot);
+                                    return (
+                                      <TableCell key={timeSlot} align="center" sx={{ 
+                                        backgroundColor: task ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                                        border: task ? '1px solid rgba(224, 224, 224, 1)' : undefined
+                                      }}>
+                                        {task ? (
+                                          <Box>
+                                            <Typography variant="body2">
+                                              {task.taskType}
+                                            </Typography>
+                                            {task.hasBreak && (
+                                              <Chip 
+                                                label="Break" 
+                                                size="small" 
+                                                color="primary" 
+                                                variant="outlined"
+                                                sx={{ mt: 0.5, minWidth: '70px' }}
+                                              />
+                                            )}
+                                          </Box>
+                                        ) : '-'}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    </Collapse>
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>
@@ -1194,47 +1297,53 @@ export default function ScheduleManagement() {
               </Grid>
 
               <Typography variant="h6" gutterBottom>Assignments</Typography>
-              {selectedViewSchedule.agents.map((agent, agentIndex) => (
-                <Box key={agent.id} sx={{ mb: agentIndex < selectedViewSchedule.agents.length - 1 ? 3 : 0 }}>
-                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    {agent.name}
-                  </Typography>
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: 'action.hover' }}>
-                          <TableCell width="30%">Time Slot</TableCell>
-                          <TableCell width="50%">Task</TableCell>
-                          <TableCell width="20%" align="center">Break</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
+              <TableContainer component={Paper} variant="outlined">
+                <Table size="small">
+                  <TableHead>
+                    <TableRow sx={{ backgroundColor: 'action.hover' }}>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Agent</TableCell>
+                      {selectedViewSchedule.agents[0]?.tasks.sort((a, b) => {
+                        const [aStart] = a.timeSlot.split(' - ');
+                        const [bStart] = b.timeSlot.split(' - ');
+                        return aStart.localeCompare(bStart);
+                      }).map(task => (
+                        <TableCell key={task.timeSlot} align="center" sx={{ fontWeight: 'bold' }}>
+                          {task.timeSlot}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {selectedViewSchedule.agents.map((agent) => (
+                      <TableRow key={agent.id}>
+                        <TableCell sx={{ fontWeight: 500 }}>{agent.name}</TableCell>
                         {agent.tasks.sort((a, b) => {
                           const [aStart] = a.timeSlot.split(' - ');
                           const [bStart] = b.timeSlot.split(' - ');
                           return aStart.localeCompare(bStart);
-                        }).map((task, taskIndex) => (
-                          <TableRow key={taskIndex}>
-                            <TableCell width="30%">{task.timeSlot}</TableCell>
-                            <TableCell width="50%">{task.taskType}</TableCell>
-                            <TableCell width="20%" align="center">
-                              {task.hasBreak ? (
+                        }).map((task) => (
+                          <TableCell key={task.timeSlot} align="center">
+                            <Box>
+                              <Typography variant="body2">
+                                {task.taskType}
+                              </Typography>
+                              {task.hasBreak && (
                                 <Chip 
                                   label="Break" 
                                   size="small" 
                                   color="primary" 
                                   variant="outlined"
-                                  sx={{ minWidth: '70px' }}
+                                  sx={{ mt: 0.5, minWidth: '70px' }}
                                 />
-                              ) : '-'}
-                            </TableCell>
-                          </TableRow>
+                              )}
+                            </Box>
+                          </TableCell>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Box>
-              ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Box>
           )}
         </DialogContent>
