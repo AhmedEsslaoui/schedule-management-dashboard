@@ -115,7 +115,14 @@ export default function Layout({ children }: LayoutProps) {
 
   const filteredMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
   const allNavItems = [...filteredMenuItems, ...countryItems];
-  const currentTab = allNavItems.findIndex(item => item.path === location.pathname);
+  const currentTab = allNavItems.findIndex(item => {
+    // Check if current path starts with the menu item path
+    // This handles both exact matches and sub-paths
+    return location.pathname.startsWith(item.path);
+  });
+
+  // If no tab matches, default to first tab
+  const activeTab = currentTab === -1 ? 0 : currentTab;
 
   const getUserFirstName = () => {
     if (currentUser?.email) {
@@ -144,7 +151,7 @@ export default function Layout({ children }: LayoutProps) {
           </Box>
 
           <Tabs 
-            value={currentTab} 
+            value={activeTab} 
             onChange={(_, newValue) => navigate(allNavItems[newValue].path)}
             sx={{ 
               ml: 4,

@@ -30,11 +30,28 @@ type TaskType =
   | 'Calls'
   | 'Calls/App follow'
   | 'Chat/Emails+Groups+Calls'
-  | 'Emails (New)+Appeals+Calls'
-  | 'Emails (Need attention)+Reviews+Groups+Calls'
+  | 'All Tasks+Calls'
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
-  | 'Kenya Calls';
+  | 'Kenya Calls'
+  | '-'
+  | 'Sick'
+  | 'No Show';
+
+type TaskCounts = {
+  [key: string]: number | undefined;
+  'Chat'?: number;
+  'Chat/Appeals+Reviews'?: number;
+  'Appeals/Reviews'?: number;
+  'Appeals/Reviews/Calls'?: number;
+  'Calls'?: number;
+  'Chat/Appeals'?: number;
+  'Chat/Appeals/Reviews'?: number;
+  'Chat/Appeals/Reviews/Calls'?: number;
+  'Chat/Emails+Groups+Calls'?: number;
+  'Emails/Appeals/Calls'?: number;
+  'No Show'?: number;
+};
 
 const taskTypes = [
   { value: 'Chat' as TaskType, label: 'Chat' },
@@ -44,18 +61,18 @@ const taskTypes = [
   { value: 'Calls' as TaskType, label: 'Calls' },
   { value: 'Calls/App follow' as TaskType, label: 'Calls/App follow' },
   { value: 'Chat/Emails+Groups+Calls' as TaskType, label: 'Chat/Emails+Groups+Calls' },
-  { value: 'Emails (New)+Appeals+Calls' as TaskType, label: 'Emails (New)+Appeals+Calls' },
-  { value: 'Emails (Need attention)+Reviews+Groups+Calls' as TaskType, label: 'Emails (Need attention)+Reviews+Groups+Calls' },
+  { value: 'All Tasks+Calls' as TaskType, label: 'All Tasks+Calls' },
   { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
   { value: 'Emails' as TaskType, label: 'Emails' },
-  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' }
+  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },
+  { value: '-' as TaskType, label: '-' },
+  { value: 'Sick' as TaskType, label: 'Sick' },
+  { value: 'No Show' as TaskType, label: 'No Show' }
 ];
 
 interface AgentTaskAnalytics {
   name: string;
-  tasks: {
-    [K in TaskType]?: number;
-  };
+  tasks: TaskCounts;
   totalHours: number;
 }
 
@@ -147,10 +164,12 @@ export default function Analytics() {
                   hours = data.interval;
                 }
 
-                if (!agentAnalytics[agent.name].tasks[task.taskType]) {
-                  agentAnalytics[agent.name].tasks[task.taskType] = 0;
+                const taskType = task.taskType as keyof TaskCounts;
+                if (!agentAnalytics[agent.name].tasks[taskType]) {
+                  agentAnalytics[agent.name].tasks[taskType] = 1;
+                } else {
+                  agentAnalytics[agent.name].tasks[taskType] = (agentAnalytics[agent.name].tasks[taskType] || 0) + 1;
                 }
-                agentAnalytics[agent.name].tasks[task.taskType] += hours;
                 agentAnalytics[agent.name].totalHours += hours;
               });
             });

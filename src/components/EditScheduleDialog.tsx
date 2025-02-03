@@ -36,8 +36,7 @@ type TaskType =
   | 'Calls'
   | 'Calls/App follow'
   | 'Chat/Emails+Groups+Calls'
-  | 'Emails (New)+Appeals+Calls'
-  | 'Emails (Need attention)+Reviews+Groups+Calls'
+  | 'All Tasks+Calls'
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
   | 'Kenya Calls'
@@ -85,8 +84,7 @@ const taskTypes = [
   { value: 'Calls' as TaskType, label: 'Calls' },
   { value: 'Calls/App follow' as TaskType, label: 'Calls/App follow' },
   { value: 'Chat/Emails+Groups+Calls' as TaskType, label: 'Chat/Emails+Groups+Calls' },
-  { value: 'Emails (New)+Appeals+Calls' as TaskType, label: 'Emails (New)+Appeals+Calls' },
-  { value: 'Emails (Need attention)+Reviews+Groups+Calls' as TaskType, label: 'Emails (Need attention)+Reviews+Groups+Calls' },
+  { value: 'All Tasks+Calls' as TaskType, label: 'All Tasks+Calls' },
   { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
   { value: 'Emails' as TaskType, label: 'Emails' },
   { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },

@@ -24,7 +24,21 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
-type TaskType = 'Chat' | 'Email' | 'Call' | 'Break';
+type TaskType = 
+  | 'Chat'
+  | 'Chat/Appeals+Reviews'
+  | 'Appeals/Reviews'
+  | 'Appeals/Reviews/Calls'
+  | 'Calls'
+  | 'Calls/App follow'
+  | 'Chat/Emails+Groups+Calls'
+  | 'All Tasks+Calls'
+  | 'Appeals/Reviews/Calls/App follow'
+  | 'Emails'
+  | 'Kenya Calls'
+  | '-'
+  | 'Sick'
+  | 'No Show';
 
 interface Task {
   timeSlot: string;
@@ -57,11 +71,21 @@ interface Schedule {
   updatedAt: string;
 }
 
-const taskTypes: { value: TaskType; label: string }[] = [
-  { value: 'Chat', label: 'Chats' },
-  { value: 'Email', label: 'Emails' },
-  { value: 'Call', label: 'Calls' },
-  { value: 'Break', label: 'Break' },
+const taskTypes = [
+  { value: 'Chat' as TaskType, label: 'Chat' },
+  { value: 'Chat/Appeals+Reviews' as TaskType, label: 'Chat/Appeals+Reviews' },
+  { value: 'Appeals/Reviews' as TaskType, label: 'Appeals/Reviews' },
+  { value: 'Appeals/Reviews/Calls' as TaskType, label: 'Appeals/Reviews/Calls' },
+  { value: 'Calls' as TaskType, label: 'Calls' },
+  { value: 'Calls/App follow' as TaskType, label: 'Calls/App follow' },
+  { value: 'Chat/Emails+Groups+Calls' as TaskType, label: 'Chat/Emails+Groups+Calls' },
+  { value: 'All Tasks+Calls' as TaskType, label: 'All Tasks+Calls' },
+  { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
+  { value: 'Emails' as TaskType, label: 'Emails' },
+  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },
+  { value: '-' as TaskType, label: '-' },
+  { value: 'Sick' as TaskType, label: 'Sick' },
+  { value: 'No Show' as TaskType, label: 'No Show' }
 ];
 
 export default function ScheduleCreate() {
@@ -84,7 +108,7 @@ export default function ScheduleCreate() {
   
     while (currentTime < endTimeDate) {
       const slotStart = currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
-      currentTime.setHours(currentTime.getHours() + 1);
+      currentTime.setMinutes(currentTime.getMinutes() + 60);
       const slotEnd = currentTime.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
       slots.push(`${slotStart}-${slotEnd}`);
     }

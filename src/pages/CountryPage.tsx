@@ -455,9 +455,15 @@ export default function CountryPage() {
                       </TableHead>
                       <TableBody>
                         {agent.tasks.sort((a, b) => {
-                          const [aStart] = a.timeSlot.split(' - ');
-                          const [bStart] = b.timeSlot.split(' - ');
-                          return aStart.localeCompare(bStart);
+                          const [aStart] = a.timeSlot.split(' - ').map(t => t.trim());
+                          const [bStart] = b.timeSlot.split(' - ').map(t => t.trim());
+                          // Convert times to comparable numbers (e.g., "08:00" -> 800)
+                          const aTime = parseInt(aStart.replace(':', ''));
+                          const bTime = parseInt(bStart.replace(':', ''));
+                          // For night shift, adjust times after midnight to be larger than evening times
+                          const adjustedATime = selectedViewSchedule.timeFrame === 'Night' && aTime < 1000 ? aTime + 2400 : aTime;
+                          const adjustedBTime = selectedViewSchedule.timeFrame === 'Night' && bTime < 1000 ? bTime + 2400 : bTime;
+                          return adjustedATime - adjustedBTime;
                         }).map((task, taskIndex) => (
                           <TableRow key={taskIndex}>
                             <TableCell width="30%">{formatTaskTime(task.timeSlot)}</TableCell>
