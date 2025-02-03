@@ -10,6 +10,7 @@ export type TaskType =
   | 'Emails (Need attention)+Reviews+Groups+Calls'
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
+  | 'Kenya Calls'
   | 'Sick'
   | 'No Show';
 

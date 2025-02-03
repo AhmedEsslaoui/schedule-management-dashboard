@@ -40,6 +40,7 @@ type TaskType =
   | 'Emails (Need attention)+Reviews+Groups+Calls'
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
+  | 'Kenya Calls'
   | 'Sick'
   | 'No Show';
 
@@ -87,6 +88,7 @@ const taskTypes = [
   { value: 'Emails (Need attention)+Reviews+Groups+Calls' as TaskType, label: 'Emails (Need attention)+Reviews+Groups+Calls' },
   { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
   { value: 'Emails' as TaskType, label: 'Emails' },
+  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },
   { value: 'Sick' as TaskType, label: 'Sick' },
   { value: 'No Show' as TaskType, label: 'No Show' }
 ];

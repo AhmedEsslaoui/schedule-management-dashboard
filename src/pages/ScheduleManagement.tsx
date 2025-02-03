@@ -80,7 +80,8 @@ type TaskType =
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
   | 'Sick'
-  | 'No Show';
+  | 'No Show'
+  | 'Kenya Calls';
 
 const timeFrames = [
   { value: 'Day', label: 'Day (08:00 - 20:00)' },
@@ -101,7 +102,8 @@ const taskTypes = [
   { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
   { value: 'Emails' as TaskType, label: 'Emails' },
   { value: 'Sick' as TaskType, label: 'Sick' },
-  { value: 'No Show' as TaskType, label: 'No Show' }
+  { value: 'No Show' as TaskType, label: 'No Show' },
+  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' }
 ];
 
 const countries = ['Egypt', 'Morocco', 'Africa'];
@@ -215,8 +217,8 @@ export default function ScheduleManagement() {
   }
 
   const formatTimeSlot = (hour: number, nextHour: number): string => {
-    const formattedHour = hour.toString().padStart(2, '0');
-    const formattedNextHour = nextHour.toString().padStart(2, '0');
+    const formattedHour = hour === 24 ? '00' : hour.toString().padStart(2, '0');
+    const formattedNextHour = nextHour === 24 ? '00' : nextHour.toString().padStart(2, '0');
     return `${formattedHour}:00 - ${formattedNextHour}:00`;
   };
 
@@ -224,24 +226,25 @@ export default function ScheduleManagement() {
     const { start, end } = getTimeRangeForFrame(newSchedule.timeFrame);
     const slots: string[] = [];
     let hour = parseInt(start.split(':')[0]);
+    const interval = newSchedule.interval || 2;
 
     // Handle overnight shifts
     if (end <= start) {
       while (hour < 24) {
-        const nextHour = (hour + 2) <= 24 ? hour + 2 : 0;
+        const nextHour = (hour + interval) <= 24 ? hour + interval : 0;
         slots.push(formatTimeSlot(hour, nextHour));
-        hour += 2;
+        hour += interval;
       }
       hour = 0;
     }
 
     while (hour < parseInt(end.split(':')[0])) {
-      const nextHour = Math.min(hour + 2, parseInt(end.split(':')[0]));
+      const nextHour = Math.min(hour + interval, parseInt(end.split(':')[0]));
       slots.push(formatTimeSlot(hour, nextHour));
       if (nextHour === parseInt(end.split(':')[0])) {
         break;
       }
-      hour += 2;
+      hour += interval;
     }
 
     console.log('Generated time slots:', slots);
@@ -643,6 +646,7 @@ export default function ScheduleManagement() {
                       label="Interval (hours)"
                     >
                       <MenuItem value={2}>2 Hours</MenuItem>
+                      <MenuItem value={3}>3 Hours</MenuItem>
                       <MenuItem value={4}>4 Hours</MenuItem>
                       <MenuItem value={6}>6 Hours</MenuItem>
                       <MenuItem value={8}>8 Hours</MenuItem>

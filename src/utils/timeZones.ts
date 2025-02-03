@@ -23,9 +23,9 @@ export const getTimeZone = (country: string): string => {
 };
 
 export const formatTimeSlot = (hour: number): string => {
-  // Convert 24 to 0 for midnight
-  const displayHour = hour === 24 ? 0 : hour;
-  return `${displayHour.toString().padStart(2, '0')}:00`;
+  // Convert 24 to 00 for midnight
+  const displayHour = hour === 24 ? '00' : hour.toString().padStart(2, '0');
+  return `${displayHour}:00`;
 };
 
 export const isScheduleExpired = (date: string, timeFrame: string, country: string): boolean => {
