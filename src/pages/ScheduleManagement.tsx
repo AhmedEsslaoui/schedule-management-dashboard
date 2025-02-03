@@ -213,12 +213,14 @@ export default function ScheduleManagement() {
               });
             }
             // Old format: agent has timeSlots array
-            else if (agent.timeSlots && Array.isArray(agent.timeSlots)) {
-              timeSlots = agent.timeSlots.map((slot: any) => ({
-                startTime: slot.startTime?.trim(),
-                endTime: slot.endTime?.trim(),
-                taskType: slot.taskType,
-                hasBreak: slot.hasBreak || false
+            else if (agent.timeSlots) {
+              timeSlots = agent.timeSlots;
+            } else if (agent.tasks && Array.isArray(agent.tasks)) {
+              timeSlots = agent.tasks.map((task: any) => ({
+                startTime: task.timeSlot.split('-')[0],
+                endTime: task.timeSlot.split('-')[1],
+                taskType: task.taskType,
+                hasBreak: task.hasBreak
               }));
             }
             

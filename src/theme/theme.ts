@@ -82,6 +82,10 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
+          borderRadius: '0.75rem',
+          textTransform: 'none',
+          fontWeight: 500,
+          padding: '0.625rem 1.25rem',
           '&:focus': {
             outline: 'none',
             boxShadow: 'none',
@@ -89,6 +93,12 @@ const theme = createTheme({
           '&:focus-visible': {
             outline: 'none',
             boxShadow: 'none',
+          }
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
           },
         },
       },
@@ -101,22 +111,6 @@ const theme = createTheme({
           transition: 'all 0.2s ease-in-out',
           '&:hover': {
             boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-          },
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '0.75rem',
-          textTransform: 'none',
-          fontWeight: 500,
-          padding: '0.625rem 1.25rem',
-        },
-        contained: {
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
           },
         },
       },
@@ -234,6 +228,10 @@ export const lightTheme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
+          borderRadius: '0.75rem',
+          textTransform: 'none',
+          fontWeight: 500,
+          padding: '0.625rem 1.25rem',
           '&:focus': {
             outline: 'none',
             boxShadow: 'none',
@@ -241,6 +239,12 @@ export const lightTheme = createTheme({
           '&:focus-visible': {
             outline: 'none',
             boxShadow: 'none',
+          }
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
           },
         },
       },
@@ -253,22 +257,6 @@ export const lightTheme = createTheme({
           transition: 'all 0.2s ease-in-out',
           '&:hover': {
             boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-          },
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '0.75rem',
-          textTransform: 'none',
-          fontWeight: 500,
-          padding: '0.625rem 1.25rem',
-        },
-        contained: {
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
           },
         },
       },
@@ -346,6 +334,10 @@ export const darkTheme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
+          borderRadius: '0.75rem',
+          textTransform: 'none',
+          fontWeight: 500,
+          padding: '0.625rem 1.25rem',
           '&:focus': {
             outline: 'none',
             boxShadow: 'none',
@@ -353,6 +345,12 @@ export const darkTheme = createTheme({
           '&:focus-visible': {
             outline: 'none',
             boxShadow: 'none',
+          }
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
           },
         },
       },

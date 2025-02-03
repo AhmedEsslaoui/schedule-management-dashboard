@@ -146,12 +146,40 @@ export default function Analytics() {
                 };
               }
 
-              agent.tasks.forEach((task: any) => {
+              agent.tasks?.forEach((task: any) => {
                 // Skip counting hours for '-' task type
                 if (task.taskType === '-') return;
 
                 // Parse time slot
                 const [startTime, endTime] = task.timeSlot.split(' - ');
+                const [startHour] = startTime.split(':');
+                const [endHour] = endTime.split(':');
+                
+                // Calculate hours, defaulting to schedule interval if parsing fails
+                let hours = 0;
+                if (startHour && endHour) {
+                  hours = parseInt(endHour) - parseInt(startHour);
+                  if (hours < 0) hours += 24; // Handle overnight shifts
+                } else if (data.interval) {
+                  hours = data.interval;
+                }
+
+                const taskType = task.taskType as keyof TaskCounts;
+                if (!agentAnalytics[agent.name].tasks[taskType]) {
+                  agentAnalytics[agent.name].tasks[taskType] = 1;
+                } else {
+                  agentAnalytics[agent.name].tasks[taskType] = (agentAnalytics[agent.name].tasks[taskType] || 0) + 1;
+                }
+                agentAnalytics[agent.name].totalHours += hours;
+              });
+
+              agent.timeSlots?.forEach((task: any) => {
+                // Skip counting hours for '-' task type
+                if (task.taskType === '-') return;
+
+                // Parse time slot
+                const startTime = task.startTime;
+                const endTime = task.endTime;
                 const [startHour] = startTime.split(':');
                 const [endHour] = endTime.split(':');
                 

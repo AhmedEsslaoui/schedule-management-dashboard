@@ -56,7 +56,13 @@ interface Task {
 interface Agent {
   id: string;
   name: string;
-  tasks: Task[];
+  tasks?: Task[];
+  timeSlots?: {
+    startTime: string;
+    endTime: string;
+    taskType: TaskType;
+    hasBreak?: boolean;
+  }[];
 }
 
 interface Schedule {
@@ -326,57 +332,45 @@ export default function CountryPage() {
                             justifyContent: 'center'
                           }}>
                             <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                              {agent.tasks.length} tasks
+                              {(agent.timeSlots?.length || agent.tasks?.length || 0)} tasks
                             </Typography>
                           </Box>
                         </Box>
                       </AccordionSummary>
                       <AccordionDetails>
                         <Box sx={{ display: 'grid', gap: 2 }}>
-                          {agent.tasks.map((task, taskIndex) => (
+                          {(agent.timeSlots || agent.tasks?.map(task => ({
+                            startTime: task.timeSlot.split('-')[0],
+                            endTime: task.timeSlot.split('-')[1],
+                            taskType: task.taskType,
+                            hasBreak: task.hasBreak
+                          })) || []).map((task, taskIndex) => (
                             <Box
                               key={taskIndex}
                               sx={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                py: 0.75,
-                                px: 2,
-                                '&:nth-of-type(odd)': {
-                                  bgcolor: 'rgba(0, 0, 0, 0.02)'
-                                }
+                                gap: 2,
+                                bgcolor: '#F9FAFB',
+                                p: 2,
+                                borderRadius: 1
                               }}
                             >
-                              <Typography 
-                                sx={{ 
-                                  color: '#374151',
-                                  fontWeight: 500,
-                                  minWidth: '100px',
-                                  fontSize: '0.875rem'
-                                }}
-                              >
-                                {formatTaskTime(task.timeSlot)}
+                              <Typography variant="body2">
+                                {task.startTime}-{task.endTime}
                               </Typography>
-                              <Typography 
-                                sx={{ 
-                                  color: '#6B7280',
-                                  fontSize: '0.875rem'
-                                }}
-                              >
+                              <Typography variant="body2" sx={{ color: '#4B5563' }}>
                                 {task.taskType}
                               </Typography>
                               {task.hasBreak && (
-                                <Box 
-                                  sx={{ 
+                                <Chip
+                                  label="Break"
+                                  size="small"
+                                  sx={{
                                     bgcolor: '#E5E7EB',
-                                    color: '#374151',
-                                    px: 2,
-                                    py: 0.5,
-                                    borderRadius: '16px',
-                                    fontSize: '0.875rem'
+                                    color: '#4B5563'
                                   }}
-                                >
-                                  Break
-                                </Box>
+                                />
                               )}
                             </Box>
                           ))}
@@ -454,9 +448,14 @@ export default function CountryPage() {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {agent.tasks.sort((a, b) => {
-                          const [aStart] = a.timeSlot.split(' - ').map(t => t.trim());
-                          const [bStart] = b.timeSlot.split(' - ').map(t => t.trim());
+                        {(agent.timeSlots || agent.tasks?.map(task => ({
+                          startTime: task.timeSlot.split('-')[0],
+                          endTime: task.timeSlot.split('-')[1],
+                          taskType: task.taskType,
+                          hasBreak: task.hasBreak
+                        })) || []).sort((a, b) => {
+                          const [aStart] = a.startTime.split(':').map(t => t.trim());
+                          const [bStart] = b.startTime.split(':').map(t => t.trim());
                           // Convert times to comparable numbers (e.g., "08:00" -> 800)
                           const aTime = parseInt(aStart.replace(':', ''));
                           const bTime = parseInt(bStart.replace(':', ''));
@@ -466,7 +465,7 @@ export default function CountryPage() {
                           return adjustedATime - adjustedBTime;
                         }).map((task, taskIndex) => (
                           <TableRow key={taskIndex}>
-                            <TableCell width="30%">{formatTaskTime(task.timeSlot)}</TableCell>
+                            <TableCell width="30%">{task.startTime}-{task.endTime}</TableCell>
                             <TableCell width="50%">{task.taskType}</TableCell>
                             <TableCell width="20%" align="center">
                               {task.hasBreak ? (

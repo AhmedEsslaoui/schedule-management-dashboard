@@ -49,7 +49,13 @@ interface Task {
 interface Agent {
   id: string;
   name: string;
-  tasks: Task[];
+  tasks?: Task[];
+  timeSlots?: {
+    startTime: string;
+    endTime: string;
+    taskType: TaskType;
+    hasBreak?: boolean;
+  }[];
 }
 
 interface AgentSchedule {
@@ -296,10 +302,10 @@ export default function ScheduleCreate() {
               {/* Assignments Table */}
               <Box sx={{ mt: 2 }}>
                 {agents.map(agent => 
-                  agent.tasks?.map((task, index) => (
+                  agent.timeSlots?.map((task, index) => (
                     <Box key={`${agent.id}-${index}`} sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography>
-                        {agent.name} - {task.timeSlot} - {task.taskType}
+                        {agent.name} - {task.startTime}-{task.endTime} - {task.taskType}
                       </Typography>
                       <IconButton
                         size="small"
@@ -309,7 +315,7 @@ export default function ScheduleCreate() {
                             const updatedAgents = [...prevAgents];
                             const agentIndex = updatedAgents.findIndex(a => a.id === agent.id);
                             if (agentIndex !== -1) {
-                              updatedAgents[agentIndex].tasks = updatedAgents[agentIndex].tasks.filter(
+                              updatedAgents[agentIndex].timeSlots = updatedAgents[agentIndex].timeSlots.filter(
                                 (_, i) => i !== index
                               );
                             }
@@ -344,11 +350,12 @@ export default function ScheduleCreate() {
         agents: agents.map(agent => ({
           agentId: agent.id,
           agentName: agent.name,
-          timeSlots: agent.tasks.map(task => ({
+          timeSlots: agent.timeSlots || agent.tasks?.map(task => ({
             startTime: task.timeSlot.split('-')[0],
             endTime: task.timeSlot.split('-')[1],
-            taskType: task.taskType
-          }))
+            taskType: task.taskType,
+            hasBreak: task.hasBreak
+          })) || []
         })),
         status: 'draft',
         createdAt: new Date().toISOString(),
