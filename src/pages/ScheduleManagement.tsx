@@ -286,6 +286,19 @@ export default function ScheduleManagement() {
     };
   }, []);
 
+  const sortSchedules = (schedules: Schedule[]) => {
+    return [...schedules].sort((a, b) => {
+      // First sort by country
+      if (a.country < b.country) return -1;
+      if (a.country > b.country) return 1;
+      
+      // Then sort by timeFrame (Day -> Afternoon -> Night)
+      const timeFrameOrder = { Day: 1, Afternoon: 2, Night: 3 };
+      return (timeFrameOrder[a.timeFrame as keyof typeof timeFrameOrder] || 0) - 
+             (timeFrameOrder[b.timeFrame as keyof typeof timeFrameOrder] || 0);
+    });
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -302,30 +315,33 @@ export default function ScheduleManagement() {
 
   const generateTimeSlots = () => {
     const { start, end } = getTimeRangeForFrame(newSchedule.timeFrame);
+    const interval = newSchedule.interval;
     const slots: string[] = [];
-    let hour = parseInt(start.split(':')[0]);
-    const interval = newSchedule.interval || 2;
-
-    // Handle overnight shifts
-    if (end <= start) {
-      while (hour < 24) {
-        const nextHour = (hour + interval) <= 24 ? hour + interval : 0;
-        slots.push(formatTimeSlot(hour, nextHour));
-        hour += interval;
-      }
-      hour = 0;
+    
+    let currentHour = parseInt(start.split(':')[0]);
+    const endHour = parseInt(end.split(':')[0]);
+    
+    while (currentHour !== endHour) {
+      const startSlot = `${currentHour.toString().padStart(2, '0')}:00`;
+      const nextHour = (currentHour + interval) % 24;
+      const endSlot = `${nextHour.toString().padStart(2, '0')}:00`;
+      slots.push(`${startSlot}-${endSlot}`);
+      currentHour = nextHour;
     }
-
-    while (hour < parseInt(end.split(':')[0])) {
-      const nextHour = Math.min(hour + interval, parseInt(end.split(':')[0]));
-      slots.push(formatTimeSlot(hour, nextHour));
-      if (nextHour === parseInt(end.split(':')[0])) {
-        break;
-      }
-      hour += interval;
+    
+    // Sort slots for night shift to maintain correct order
+    if (newSchedule.timeFrame === 'Night') {
+      return slots.sort((a, b) => {
+        const [aStart] = a.split('-');
+        const [bStart] = b.split('-');
+        const aHour = parseInt(aStart);
+        const bHour = parseInt(bStart);
+        const adjustedA = aHour < 10 ? aHour + 24 : aHour;
+        const adjustedB = bHour < 10 ? bHour + 24 : bHour;
+        return adjustedA - adjustedB;
+      });
     }
-
-    console.log('Generated time slots:', slots);
+    
     return slots;
   };
 
@@ -1172,7 +1188,7 @@ export default function ScheduleManagement() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {schedules.map((schedule) => (
+            {sortSchedules(schedules).map((schedule) => (
               <React.Fragment key={schedule.id}>
                 <TableRow
                   sx={{
