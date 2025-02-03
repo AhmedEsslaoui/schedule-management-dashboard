@@ -129,7 +129,7 @@ const getTimeSlots = (timeFrame: string) => {
     case 'Afternoon':
       return ['12:00-14:00', '14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00', '22:00-00:00'];
     case 'Night':
-      return ['20:00-22:00', '22:00-00:00', '00:00-02:00', '02:00-04:00', '04:00-06:00', '06:00-08:00'].sort((a, b) => {
+      return ['20:00-23:00', '23:00-02:00', '02:00-05:00', '05:00-08:00'].sort((a, b) => {
         const [aStart] = a.split('-');
         const [bStart] = b.split('-');
         const aHour = parseInt(aStart);
@@ -183,7 +183,6 @@ export default function ScheduleManagement() {
     const unsubscribeSchedules = onSnapshot(q, (snapshot) => {
       const scheduleData: Schedule[] = snapshot.docs.map(doc => {
         const data = doc.data();
-        console.log('Raw Firestore data for schedule:', doc.id, JSON.stringify(data, null, 2));
         
         const schedule = {
           id: doc.id,
@@ -195,8 +194,6 @@ export default function ScheduleManagement() {
           seniorName: data.seniorName,
           country: data.country,
           agents: data.agents?.map((agent: any) => {
-            console.log('Raw agent data:', JSON.stringify(agent, null, 2));
-            
             // Handle both old and new data structures
             let timeSlots: any[] = [];
             
@@ -213,14 +210,12 @@ export default function ScheduleManagement() {
               });
             }
             // Old format: agent has timeSlots array
-            else if (agent.timeSlots) {
-              timeSlots = agent.timeSlots;
-            } else if (agent.tasks && Array.isArray(agent.tasks)) {
-              timeSlots = agent.tasks.map((task: any) => ({
-                startTime: task.timeSlot.split('-')[0],
-                endTime: task.timeSlot.split('-')[1],
-                taskType: task.taskType,
-                hasBreak: task.hasBreak
+            else if (agent.timeSlots && Array.isArray(agent.timeSlots)) {
+              timeSlots = agent.timeSlots.map((slot: any) => ({
+                startTime: slot.startTime?.trim(),
+                endTime: slot.endTime?.trim(),
+                taskType: slot.taskType,
+                hasBreak: slot.hasBreak || false
               }));
             }
             
@@ -233,7 +228,6 @@ export default function ScheduleManagement() {
           status: data.status || 'draft',
           lastStatusUpdate: data.lastStatusUpdate || null
         };
-        console.log('Processed schedule:', JSON.stringify(schedule, null, 2));
         return schedule;
       });
 
@@ -254,9 +248,7 @@ export default function ScheduleManagement() {
               await updateDoc(scheduleRef, {
                 status: 'archived'
               });
-              console.log(`Auto-archived schedule ${schedule.id} as it has expired`);
             } catch (error) {
-              console.error('Error auto-archiving schedule:', error);
             }
           }
         }
@@ -275,7 +267,6 @@ export default function ScheduleManagement() {
           fullName: doc.data().fullName,
           ...doc.data()
         }));
-        console.log('Fetched employees:', employeeData);
         setEmployees(employeeData);
       }
     );
@@ -285,19 +276,6 @@ export default function ScheduleManagement() {
       unsubscribeEmployees();
     };
   }, []);
-
-  const sortSchedules = (schedules: Schedule[]) => {
-    return [...schedules].sort((a, b) => {
-      // First sort by country
-      if (a.country < b.country) return -1;
-      if (a.country > b.country) return 1;
-      
-      // Then sort by timeFrame (Day -> Afternoon -> Night)
-      const timeFrameOrder = { Day: 1, Afternoon: 2, Night: 3 };
-      return (timeFrameOrder[a.timeFrame as keyof typeof timeFrameOrder] || 0) - 
-             (timeFrameOrder[b.timeFrame as keyof typeof timeFrameOrder] || 0);
-    });
-  };
 
   if (loading) {
     return (
@@ -315,52 +293,50 @@ export default function ScheduleManagement() {
 
   const generateTimeSlots = () => {
     const { start, end } = getTimeRangeForFrame(newSchedule.timeFrame);
-    const interval = newSchedule.interval;
     const slots: string[] = [];
-    
-    let currentHour = parseInt(start.split(':')[0]);
-    const endHour = parseInt(end.split(':')[0]);
-    
-    while (currentHour !== endHour) {
-      const startSlot = `${currentHour.toString().padStart(2, '0')}:00`;
-      const nextHour = (currentHour + interval) % 24;
-      const endSlot = `${nextHour.toString().padStart(2, '0')}:00`;
-      slots.push(`${startSlot}-${endSlot}`);
-      currentHour = nextHour;
-    }
-    
-    // Sort slots for night shift to maintain correct order
+    let hour = parseInt(start.split(':')[0]);
+    const interval = newSchedule.interval || 2;
+
     if (newSchedule.timeFrame === 'Night') {
-      return slots.sort((a, b) => {
-        const [aStart] = a.split('-');
-        const [bStart] = b.split('-');
-        const aHour = parseInt(aStart);
-        const bHour = parseInt(bStart);
-        const adjustedA = aHour < 10 ? aHour + 24 : aHour;
-        const adjustedB = bHour < 10 ? bHour + 24 : bHour;
-        return adjustedA - adjustedB;
-      });
+      // Special handling for night shift
+      const nightSlots = [
+        '20:00 - 23:00',
+        '23:00 - 02:00',
+        '02:00 - 05:00',
+        '05:00 - 08:00'
+      ];
+      return nightSlots;
     }
-    
+
+    // Handle other shifts
+    if (end <= start) {
+      while (hour < 24) {
+        const nextHour = (hour + interval) <= 24 ? hour + interval : 0;
+        slots.push(formatTimeSlot(hour, nextHour));
+        hour += interval;
+      }
+      hour = 0;
+    }
+
+    while (hour < parseInt(end.split(':')[0])) {
+      const nextHour = Math.min(hour + interval, parseInt(end.split(':')[0]));
+      slots.push(formatTimeSlot(hour, nextHour));
+      if (nextHour === parseInt(end.split(':')[0])) {
+        break;
+      }
+      hour += interval;
+    }
+
     return slots;
   };
 
   const generateAutoSchedule = () => {
     if (!selectedDate || !newSchedule.timeFrame) {
-      console.error('Missing date or timeFrame');
       return null;
     }
 
-    console.log('Starting auto schedule generation with:', {
-      selectedAgents,
-      selectedTasks,
-      timeFrame: newSchedule.timeFrame,
-      interval: newSchedule.interval
-    });
-
     const timeSlots = generateTimeSlots();
     if (timeSlots.length === 0) {
-      console.error('No time slots generated');
       return null;
     }
 
@@ -401,7 +377,6 @@ export default function ScheduleManagement() {
       });
     });
 
-    console.log('Generated assignments:', assignments);
     return assignments;
   };
 
@@ -432,7 +407,6 @@ export default function ScheduleManagement() {
         return;
       }
       
-      console.log('Validating automatic schedule generation');
       const generatedAssignments = generateAutoSchedule();
       if (generatedAssignments) {
         setAutoAssignments(generatedAssignments);
@@ -499,23 +473,17 @@ export default function ScheduleManagement() {
   const handleCreateSchedule = async () => {
     if (!selectedDate) return;
 
-    console.log('Creating schedule with method:', creationMethod);
-
     let finalAgents: Agent[] = [];
     
     if (creationMethod === 'automatic') {
-      console.log('Generating automatic schedule before save');
       const generatedAssignments = generateAutoSchedule();
       if (!generatedAssignments) {
-        console.error('Failed to generate assignments');
         return;
       }
       finalAgents = generatedAssignments;
     } else {
       finalAgents = agents;
     }
-
-    console.log('Final agents for schedule:', finalAgents);
 
     try {
       const scheduleData = {
@@ -524,7 +492,6 @@ export default function ScheduleManagement() {
         agents: finalAgents,
         status: 'draft',
       };
-      console.log('Saving schedule data:', scheduleData);
 
       const scheduleRef = await addDoc(collection(db, 'schedules'), scheduleData);
 
@@ -538,7 +505,6 @@ export default function ScheduleManagement() {
 
       handleClose();
     } catch (error) {
-      console.error('Error creating schedule:', error);
     }
   };
 
@@ -549,7 +515,6 @@ export default function ScheduleManagement() {
         lastStatusUpdate: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error publishing schedule:', error);
     }
   };
 
@@ -568,7 +533,6 @@ export default function ScheduleManagement() {
 
       await deleteDoc(doc(db, 'schedules', scheduleId));
     } catch (error) {
-      console.error('Error deleting schedule:', error);
     }
   };
 
@@ -579,12 +543,10 @@ export default function ScheduleManagement() {
         status: 'archived'
       });
     } catch (error) {
-      console.error('Error archiving schedule:', error);
     }
   };
 
   const handleViewSchedule = (schedule: Schedule) => {
-    console.log('Opening edit dialog for schedule:', schedule);
     setViewingSchedule(schedule);
   };
 
@@ -798,6 +760,7 @@ export default function ScheduleManagement() {
                     <FormControlLabel
                       control={
                         <Checkbox
+                          id="task-chat-checkbox"
                           checked={selectedTasks.includes('Chat')}
                           onChange={(e) => {
                             setSelectedTasks(e.target.checked ? ['Chat'] : []);
@@ -805,6 +768,7 @@ export default function ScheduleManagement() {
                         />
                       }
                       label="Chat"
+                      htmlFor="task-chat-checkbox"
                     />
                   </Grid>
                 </Grid>
@@ -878,14 +842,24 @@ export default function ScheduleManagement() {
                         label="Time Slot"
                       >
                         {generateTimeSlots().map(slot => {
+                          // Only check time slots for the currently selected agent
                           const currentAgent = agents.find(a => a.id === selectedAgent);
-                          const isSlotTakenByCurrentAgent = currentAgent?.timeSlots.some(t => t.startTime === slot.split('-')[0] && t.endTime === slot.split('-')[1]);
+                          const isSlotTaken = currentAgent?.timeSlots.some(t => {
+                            const [slotStart, slotEnd] = slot.split(' - ');
+                            return t.startTime === slotStart && t.endTime === slotEnd;
+                          });
                           
                           return (
                             <MenuItem 
                               key={slot} 
                               value={slot}
-                              disabled={isSlotTakenByCurrentAgent}
+                              disabled={isSlotTaken}
+                              sx={{
+                                '&.Mui-disabled': {
+                                  opacity: 0.7,
+                                  backgroundColor: 'rgba(0, 0, 0, 0.05)'
+                                }
+                              }}
                             >
                               {slot}
                             </MenuItem>
@@ -895,7 +869,7 @@ export default function ScheduleManagement() {
                     </FormControl>
                   </Grid>
                   
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={3}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Task Type</InputLabel>
                       <Select
@@ -916,12 +890,14 @@ export default function ScheduleManagement() {
                     <FormControlLabel
                       control={
                         <Checkbox
+                          id="task-break-checkbox"
                           checked={includeBreak}
                           onChange={(e) => setIncludeBreak(e.target.checked)}
                           size="small"
                         />
                       }
                       label="Include Break"
+                      htmlFor="task-break-checkbox"
                       sx={{ m: 0 }}
                     />
                   </Grid>
@@ -929,6 +905,8 @@ export default function ScheduleManagement() {
                   <Grid item xs={12} sm={1}>
                     <Button
                       variant="contained"
+                      color="primary"
+                      size="small"
                       fullWidth
                       onClick={handleAddTask}
                       disabled={!selectedAgent || !selectedTimeSlot || !selectedTaskType}
@@ -936,18 +914,12 @@ export default function ScheduleManagement() {
                       Assign
                     </Button>
                   </Grid>
-
-                  <Grid item xs={12} sm={12}>
-                    <Typography variant="body2" color="text.secondary">
-                      Note: Ensure correct time slot format (HH:MM - HH:MM)
-                    </Typography>
-                  </Grid>
                 </Grid>
               </Paper>
 
               {/* Assignments Table */}
               {agents.length > 0 && (
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={{ p: 2, mt: 3 }}>
                   <Typography variant="subtitle1" gutterBottom>
                     Assigned Tasks
                   </Typography>
@@ -955,9 +927,9 @@ export default function ScheduleManagement() {
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold' }}>Agent</TableCell>
+                          <TableCell>Agent</TableCell>
                           {generateTimeSlots().map((slot) => (
-                            <TableCell key={slot} align="center" sx={{ fontWeight: 'bold' }}>
+                            <TableCell key={slot} align="center">
                               {slot}
                             </TableCell>
                           ))}
@@ -966,38 +938,57 @@ export default function ScheduleManagement() {
                       <TableBody>
                         {agents.map((agent) => (
                           <TableRow key={agent.id}>
-                            <TableCell sx={{ fontWeight: 500 }}>{agent.name}</TableCell>
-                            {generateTimeSlots().map((timeSlot) => {
-                              const task = agent.timeSlots.find(t => t.startTime === timeSlot.split('-')[0] && t.endTime === timeSlot.split('-')[1]);
+                            <TableCell component="th" scope="row">
+                              {agent.name}
+                            </TableCell>
+                            {generateTimeSlots().map((slot) => {
+                              const [slotStart, slotEnd] = slot.split('-').map(t => t.trim());
+                              const task = agent.timeSlots.find(t => 
+                                t.startTime === slotStart && t.endTime === slotEnd
+                              );
+                              
                               return (
-                                <TableCell key={timeSlot} align="center" sx={{ 
-                                  backgroundColor: task ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
-                                  border: task ? '1px solid rgba(224, 224, 224, 1)' : undefined
+                                <TableCell key={slot} align="center" sx={{
+                                  position: 'relative',
+                                  minWidth: '150px',
+                                  padding: '16px',
+                                  ...(task && {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                                    border: '1px solid rgba(224, 224, 224, 1)'
+                                  })
                                 }}>
                                   {task ? (
-                                    <Box>
-                                      <Typography variant="body2">
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                         {task.taskType}
                                       </Typography>
                                       {task.hasBreak && (
                                         <Chip 
-                                          label="Break" 
-                                          size="small" 
-                                          color="primary" 
+                                          label="Break"
+                                          size="small"
+                                          color="primary"
                                           variant="outlined"
                                           sx={{ mt: 0.5, minWidth: '70px' }}
                                         />
                                       )}
                                       <IconButton
                                         size="small"
-                                        color="error"
-                                        onClick={() => handleRemoveTask(agent.id, agent.timeSlots.findIndex(handleTaskComparison))}
-                                        sx={{ ml: 1 }}
+                                        onClick={() => handleRemoveTask(agent.id, agent.timeSlots.findIndex(t => 
+                                          t.startTime === slotStart && t.endTime === slotEnd
+                                        ))}
+                                        sx={{
+                                          position: 'absolute',
+                                          top: '4px',
+                                          right: '4px',
+                                          padding: '2px'
+                                        }}
                                       >
                                         <DeleteIcon fontSize="small" />
                                       </IconButton>
                                     </Box>
-                                  ) : '-'}
+                                  ) : (
+                                    <Typography variant="body2" color="text.secondary">-</Typography>
+                                  )}
                                 </TableCell>
                               );
                             })}
@@ -1016,55 +1007,103 @@ export default function ScheduleManagement() {
     }
   };
 
+  const selectNextAvailableTimeSlot = (currentSlot: string) => {
+    const allSlots = generateTimeSlots();
+    const currentIndex = allSlots.findIndex(slot => slot === currentSlot);
+    
+    if (currentIndex === -1 || currentIndex === allSlots.length - 1) {
+      return ''; // No next slot available
+    }
+
+    // Find the next slot that isn't taken by the current agent
+    for (let i = currentIndex + 1; i < allSlots.length; i++) {
+      const slot = allSlots[i];
+      const currentAgent = agents.find(a => a.id === selectedAgent);
+      const isSlotTaken = currentAgent?.timeSlots.some(t => {
+        const [slotStart, slotEnd] = slot.split(' - ');
+        return t.startTime === slotStart && t.endTime === slotEnd;
+      });
+
+      if (!isSlotTaken) {
+        return slot;
+      }
+    }
+
+    return ''; // No available slots found
+  };
+
   const handleAddTask = () => {
     if (!selectedAgent || !selectedTimeSlot || !selectedTaskType) return;
 
-    setAgents(prev => prev.map(agent => {
-      if (agent.id === selectedAgent) {
-        // Check if a task already exists for this time slot
-        const existingTaskIndex = agent.timeSlots.findIndex(t => t.startTime === selectedTimeSlot.split('-')[0] && t.endTime === selectedTimeSlot.split('-')[1]);
-        if (existingTaskIndex !== -1) {
-          // Update existing task
-          const updatedTasks = [...agent.timeSlots];
-          updatedTasks[existingTaskIndex] = {
-            startTime: selectedTimeSlot.split('-')[0],
-            endTime: selectedTimeSlot.split('-')[1],
-            taskType: selectedTaskType,
-            hasBreak: includeBreak
-          };
-          return { ...agent, timeSlots: updatedTasks };
-        } else {
-          // Add new task
-          return {
-            ...agent,
-            timeSlots: [
-              ...agent.timeSlots,
-              {
-                startTime: selectedTimeSlot.split('-')[0],
-                endTime: selectedTimeSlot.split('-')[1],
-                taskType: selectedTaskType,
-                hasBreak: includeBreak
-              }
-            ]
-          };
-        }
+    const [startTime, endTime] = selectedTimeSlot.split(' - ').map(t => t.trim());
+    
+    setAgents(prevAgents => {
+      const existingAgent = prevAgents.find(a => a.id === selectedAgent);
+      const employee = employees.find(e => e.id === selectedAgent);
+      
+      if (existingAgent) {
+        // Update existing agent
+        return prevAgents.map(agent => {
+          if (agent.id === selectedAgent) {
+            return {
+              ...agent,
+              timeSlots: [
+                ...agent.timeSlots,
+                {
+                  startTime,
+                  endTime,
+                  taskType: selectedTaskType,
+                  hasBreak: includeBreak
+                }
+              ]
+            };
+          }
+          return agent;
+        });
+      } else if (employee) {
+        // Add new agent
+        return [
+          ...prevAgents,
+          {
+            id: selectedAgent,
+            name: employee.fullName,
+            timeSlots: [{
+              startTime,
+              endTime,
+              taskType: selectedTaskType,
+              hasBreak: includeBreak
+            }]
+          }
+        ];
       }
-      return agent;
-    }));
+      return prevAgents;
+    });
 
-    // Clear selections
-    setSelectedTimeSlot('');
-    setSelectedTaskType('Chat');
-    setIncludeBreak(false);
+    // Find and select the next available time slot
+    const nextSlot = selectNextAvailableTimeSlot(selectedTimeSlot);
+    setSelectedTimeSlot(nextSlot);
+    
+    // Only reset these if no next slot is available
+    if (!nextSlot) {
+      setSelectedTaskType('Chat');
+      setIncludeBreak(false);
+    }
   };
 
-  const selectNextTimeSlot = (currentSlot: string) => {
-    const timeSlots = generateTimeSlots();
-    const currentIndex = timeSlots.findIndex(slot => slot === currentSlot);
-    if (currentIndex !== -1 && currentIndex < timeSlots.length - 1) {
-      return timeSlots[currentIndex + 1];
-    }
-    return '';
+  const handleRemoveTask = (agentId: string, taskIndex: number) => {
+    setAgents(prevAgents => 
+      prevAgents.map(agent => {
+        if (agent.id === agentId) {
+          const newTimeSlots = [...agent.timeSlots];
+          newTimeSlots.splice(taskIndex, 1);
+          return {
+            ...agent,
+            timeSlots: newTimeSlots
+          };
+        }
+        return agent;
+      }).filter(agent => agent.timeSlots.length > 0) // Remove agent if they have no tasks
+    );
   };
 
   const handleCreationMethodSelect = (method: 'manual' | 'automatic') => {
@@ -1098,17 +1137,6 @@ export default function ScheduleManagement() {
 
   const handleTaskComparison = (t: { startTime: string; endTime: string }) => {
     return t.startTime === selectedTimeSlot.split('-')[0] && t.endTime === selectedTimeSlot.split('-')[1];
-  };
-
-  const handleRemoveTask = (agentId: string, taskIndex: number) => {
-    setAgents(prev => prev.map(agent => {
-      if (agent.id === agentId) {
-        const updatedTasks = [...agent.timeSlots];
-        updatedTasks.splice(taskIndex, 1);
-        return { ...agent, timeSlots: updatedTasks };
-      }
-      return agent;
-    }));
   };
 
   const renderAgentSchedule = (agent: any) => {
@@ -1188,7 +1216,7 @@ export default function ScheduleManagement() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortSchedules(schedules).map((schedule) => (
+            {schedules.map((schedule) => (
               <React.Fragment key={schedule.id}>
                 <TableRow
                   sx={{
@@ -1282,9 +1310,6 @@ export default function ScheduleManagement() {
                   <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                     <Collapse in={expandedSchedules.includes(schedule.id)} timeout="auto" unmountOnExit>
                       <Box sx={{ margin: 1 }}>
-                        {console.log('Schedule being expanded:', schedule)}
-                        {console.log('Schedule agents:', schedule.agents)}
-                        {console.log('Time slots:', getTimeSlots(schedule.timeFrame))}
                         <Typography variant="subtitle1" gutterBottom component="div">
                           Schedule Details
                         </Typography>
@@ -1303,31 +1328,18 @@ export default function ScheduleManagement() {
                             <TableBody>
                               {schedule.agents?.map((agent) => (
                                 <TableRow key={agent.id}>
-                                  {console.log('Processing agent:', agent.name, 'TimeSlots:', JSON.stringify(agent.timeSlots, null, 2))}
                                   <TableCell sx={{ fontWeight: 500 }}>{agent.name}</TableCell>
                                   {getTimeSlots(schedule.timeFrame).map((timeSlot) => {
                                     const [slotStart, slotEnd] = timeSlot.split('-');
-                                    console.log(`Looking for time slot ${timeSlot} in agent ${agent.name}'s timeSlots:`, JSON.stringify(agent.timeSlots, null, 2));
-                                    
-                                    // Convert times to comparable numbers (e.g., "08:00" -> 800)
-                                    const slotStartNum = parseInt(slotStart.replace(':', ''));
-                                    const slotEndNum = parseInt(slotEnd.replace(':', ''));
-                                    
                                     const task = agent.timeSlots?.find(t => {
                                       const taskStartNum = parseInt(t.startTime.replace(':', ''));
                                       const taskEndNum = parseInt(t.endTime.replace(':', ''));
-                                      
-                                      // For night shift, adjust times after midnight
+                                      const slotStartNum = parseInt(slotStart.replace(':', ''));
+                                      const slotEndNum = parseInt(slotEnd.replace(':', ''));
                                       const adjustedTaskStartNum = schedule.timeFrame === 'Night' && taskStartNum < 1000 ? taskStartNum + 2400 : taskStartNum;
                                       const adjustedTaskEndNum = schedule.timeFrame === 'Night' && taskEndNum < 1000 ? taskEndNum + 2400 : taskEndNum;
                                       const adjustedSlotStartNum = schedule.timeFrame === 'Night' && slotStartNum < 1000 ? slotStartNum + 2400 : slotStartNum;
                                       const adjustedSlotEndNum = schedule.timeFrame === 'Night' && slotEndNum < 1000 ? slotEndNum + 2400 : slotEndNum;
-                                      
-                                      console.log(`Comparing slot times:
-                                        Display Slot: ${slotStart}-${slotEnd} (${adjustedSlotStartNum}-${adjustedSlotEndNum})
-                                        Task Slot: ${t.startTime}-${t.endTime} (${adjustedTaskStartNum}-${adjustedTaskEndNum})`);
-                                      
-                                      // Check if the time ranges overlap
                                       const overlap = (
                                         // Task starts during the slot
                                         (adjustedTaskStartNum >= adjustedSlotStartNum && adjustedTaskStartNum < adjustedSlotEndNum) ||
@@ -1336,13 +1348,11 @@ export default function ScheduleManagement() {
                                         // Task completely contains the slot
                                         (adjustedTaskStartNum <= adjustedSlotStartNum && adjustedTaskEndNum >= adjustedSlotEndNum)
                                       );
-                                      
-                                      console.log(`Overlap result: ${overlap}`);
                                       return overlap;
                                     });
 
                                     return (
-                                      <TableCell key={timeSlot} align="center" sx={{ 
+                                      <TableCell key={timeSlot} align="center" sx={{
                                         backgroundColor: task ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
                                         border: task ? '1px solid rgba(224, 224, 224, 1)' : undefined
                                       }}>
@@ -1361,7 +1371,9 @@ export default function ScheduleManagement() {
                                               />
                                             )}
                                           </Box>
-                                        ) : '-'}
+                                        ) : (
+                                          <Typography variant="body2" color="text.secondary">-</Typography>
+                                        )}
                                       </TableCell>
                                     );
                                   })}

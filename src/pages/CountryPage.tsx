@@ -200,6 +200,48 @@ export default function CountryPage() {
     setSelectedViewSchedule(null);
   };
 
+  const sortTimeSlots = (timeSlots: any[], timeFrame: string) => {
+    const timeToMinutes = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      // For times after midnight, add 24 hours to keep chronological order
+      return (hours < 12 && (timeFrame === 'Night' || timeFrame === 'Afternoon')) ? 
+        ((hours + 24) * 60 + minutes) : 
+        (hours * 60 + minutes);
+    };
+
+    return timeSlots.sort((a, b) => {
+      const startA = a.startTime || a.timeSlot.split(' - ')[0];
+      const startB = b.startTime || b.timeSlot.split(' - ')[0];
+      return timeToMinutes(startA) - timeToMinutes(startB);
+    });
+  };
+
+  const renderAgentTasks = (agent: Agent) => {
+    const tasks = agent.tasks || agent.timeSlots?.map(slot => ({
+      timeSlot: `${slot.startTime} - ${slot.endTime}`,
+      taskType: slot.taskType,
+      hasBreak: slot.hasBreak
+    })) || [];
+
+    return sortTimeSlots(tasks, selectedViewSchedule.timeFrame).map((task, index) => (
+      <TableRow key={index}>
+        <TableCell width="30%">{task.timeSlot}</TableCell>
+        <TableCell width="50%">{task.taskType}</TableCell>
+        <TableCell width="20%" align="center">
+          {task.hasBreak ? (
+            <Chip 
+              label="Break" 
+              size="small" 
+              color="primary" 
+              variant="outlined"
+              sx={{ minWidth: '70px' }}
+            />
+          ) : '-'}
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -448,38 +490,7 @@ export default function CountryPage() {
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {(agent.timeSlots || agent.tasks?.map(task => ({
-                          startTime: task.timeSlot.split('-')[0],
-                          endTime: task.timeSlot.split('-')[1],
-                          taskType: task.taskType,
-                          hasBreak: task.hasBreak
-                        })) || []).sort((a, b) => {
-                          const [aStart] = a.startTime.split(':').map(t => t.trim());
-                          const [bStart] = b.startTime.split(':').map(t => t.trim());
-                          // Convert times to comparable numbers (e.g., "08:00" -> 800)
-                          const aTime = parseInt(aStart.replace(':', ''));
-                          const bTime = parseInt(bStart.replace(':', ''));
-                          // For night shift, adjust times after midnight to be larger than evening times
-                          const adjustedATime = selectedViewSchedule.timeFrame === 'Night' && aTime < 1000 ? aTime + 2400 : aTime;
-                          const adjustedBTime = selectedViewSchedule.timeFrame === 'Night' && bTime < 1000 ? bTime + 2400 : bTime;
-                          return adjustedATime - adjustedBTime;
-                        }).map((task, taskIndex) => (
-                          <TableRow key={taskIndex}>
-                            <TableCell width="30%">{task.startTime}-{task.endTime}</TableCell>
-                            <TableCell width="50%">{task.taskType}</TableCell>
-                            <TableCell width="20%" align="center">
-                              {task.hasBreak ? (
-                                <Chip 
-                                  label="Break" 
-                                  size="small" 
-                                  color="primary" 
-                                  variant="outlined"
-                                  sx={{ minWidth: '70px' }}
-                                />
-                              ) : '-'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {renderAgentTasks(agent)}
                       </TableBody>
                     </Table>
                   </TableContainer>

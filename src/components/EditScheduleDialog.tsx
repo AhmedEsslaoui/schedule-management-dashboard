@@ -352,11 +352,13 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
                                 <FormControlLabel
                                   control={
                                     <Checkbox
+                                      id="edit-task-break-checkbox"
                                       checked={includeBreak}
                                       onChange={(e) => setIncludeBreak(e.target.checked)}
                                     />
                                   }
                                   label="Include Break"
+                                  htmlFor="edit-task-break-checkbox"
                                 />
                               </FormControl>
                               <IconButton
@@ -467,13 +469,13 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
                 <FormControlLabel
                   control={
                     <Checkbox
+                      id="edit-task-break-checkbox"
                       checked={includeBreak}
                       onChange={(e) => setIncludeBreak(e.target.checked)}
-                      size="small"
                     />
                   }
                   label="Include Break"
-                  sx={{ m: 0 }}
+                  htmlFor="edit-task-break-checkbox"
                 />
               </Grid>
 

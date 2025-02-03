@@ -24,13 +24,11 @@ import { db } from '../config/firebase';
 interface Task {
   timeSlot: string;
   taskType: string;
-  hasBreak: boolean;
 }
 
 interface Agent {
   id: string;
   name: string;
-  timeSlots?: any;
   tasks: Task[];
 }
 
@@ -181,15 +179,10 @@ export default function Archive() {
                         {agent.name}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {(agent.timeSlots || agent.tasks?.map(task => ({
-                          startTime: task.timeSlot.split('-')[0],
-                          endTime: task.timeSlot.split('-')[1],
-                          taskType: task.taskType,
-                          hasBreak: task.hasBreak
-                        })) || []).map((task, index) => (
+                        {agent.tasks.map((task, index) => (
                           <Chip
                             key={index}
-                            label={`${task.startTime} - ${task.endTime} - ${task.taskType}`}
+                            label={`${task.timeSlot} - ${task.taskType}`}
                             variant="outlined"
                           />
                         ))}
