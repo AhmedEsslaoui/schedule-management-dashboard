@@ -17,7 +17,7 @@ import {
   FormControlLabel,
   Divider,
 } from '@mui/material';
-import { Edit as EditIcon, Check as CheckIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Check as CheckIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { formatTimeSlot } from '../utils/timeZones';
@@ -47,7 +47,12 @@ type TaskType =
 interface Agent {
   id: string;
   name: string;
-  tasks: Task[];
+  timeSlots: {
+    startTime: string;
+    endTime: string;
+    taskType: TaskType;
+    hasBreak?: boolean;
+  }[];
 }
 
 interface Employee {
@@ -183,7 +188,12 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
     const newAgent: Agent = {
       id: employee.id,
       name: employee.fullName,
-      tasks
+      timeSlots: tasks.map(task => ({
+        startTime: task.timeSlot.split('-')[0],
+        endTime: task.timeSlot.split('-')[1],
+        taskType: task.taskType,
+        hasBreak: task.hasBreak
+      }))
     };
 
     setEditedSchedule({
@@ -203,8 +213,8 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
     const agentIndex = updatedAgents.findIndex(a => a.id === agentId);
     
     if (selectedTaskType) {
-      updatedAgents[agentIndex].tasks[taskIndex] = {
-        ...updatedAgents[agentIndex].tasks[taskIndex],
+      updatedAgents[agentIndex].timeSlots[taskIndex] = {
+        ...updatedAgents[agentIndex].timeSlots[taskIndex],
         taskType: selectedTaskType,
         hasBreak: includeBreak
       };
@@ -229,8 +239,8 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
       return;
     }
 
-    const isTimeSlotTaken = editedSchedule.agents[existingAgentIndex].tasks.some(
-      task => task.timeSlot === selectedTimeSlot
+    const isTimeSlotTaken = editedSchedule.agents[existingAgentIndex].timeSlots.some(
+      task => task.startTime === selectedTimeSlot.split('-')[0] && task.endTime === selectedTimeSlot.split('-')[1]
     );
 
     if (isTimeSlotTaken) {
@@ -238,14 +248,15 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
       return;
     }
 
-    const newTask: Task = {
-      timeSlot: selectedTimeSlot,
+    const newTask = {
+      startTime: selectedTimeSlot.split('-')[0],
+      endTime: selectedTimeSlot.split('-')[1],
       taskType: selectedTaskType,
       hasBreak: includeBreak
     };
 
     const updatedAgents = [...editedSchedule.agents];
-    updatedAgents[existingAgentIndex].tasks.push(newTask);
+    updatedAgents[existingAgentIndex].timeSlots.push(newTask);
 
     setEditedSchedule({ ...editedSchedule, agents: updatedAgents });
 
@@ -311,7 +322,7 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
                     </Box>
                     
                     <Box sx={{ pl: 2 }}>
-                      {agent.tasks.map((task, taskIndex) => (
+                      {(agent.timeSlots || []).map((task, taskIndex) => (
                         <Box 
                           key={taskIndex} 
                           sx={{ 
@@ -345,7 +356,7 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
                                       onChange={(e) => setIncludeBreak(e.target.checked)}
                                     />
                                   }
-                                  label="Include 1hr Break"
+                                  label="Include Break"
                                 />
                               </FormControl>
                               <IconButton
@@ -358,20 +369,34 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
                             </Box>
                           ) : (
                             <>
-                              <Typography variant="body2" sx={{ flex: 1 }}>
-                                {task.timeSlot} - {task.taskType}
-                                {task.hasBreak && <span> (+1hr Break)</span>}
+                              <Typography variant="body2">
+                                {task.startTime}-{task.endTime}: {task.taskType}
+                                {task.hasBreak && ' (Break)'}
                               </Typography>
                               <IconButton
-                                size="small"
+                                edge="end"
+                                aria-label="edit"
                                 onClick={() => {
                                   setEditingTask({ agentId: agent.id, taskIndex });
                                   setSelectedTaskType(task.taskType);
                                   setIncludeBreak(!!task.hasBreak);
                                 }}
-                                sx={{ ml: 1 }}
+                                size="small"
                               >
                                 <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                edge="end"
+                                aria-label="delete"
+                                onClick={() => {
+                                  const updatedAgents = [...editedSchedule.agents];
+                                  updatedAgents.find(a => a.id === agent.id).timeSlots.splice(taskIndex, 1);
+                                  setEditedSchedule({ ...editedSchedule, agents: updatedAgents });
+                                }}
+                                color="error"
+                                size="small"
+                              >
+                                <DeleteIcon fontSize="small" />
                               </IconButton>
                             </>
                           )}
