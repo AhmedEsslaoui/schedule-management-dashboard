@@ -18,7 +18,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { isWithinInterval, parseISO } from 'date-fns';
+import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { alpha } from '@mui/material/styles';
 import LoadingAnimation from '../components/LoadingAnimation';
 
@@ -100,6 +100,7 @@ export default function Analytics() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const schedulesRef = collection(db, 'schedules');
         let schedulesQuery = query(schedulesRef);
 
@@ -109,55 +110,65 @@ export default function Analytics() {
         }
 
         const schedulesSnapshot = await getDocs(schedulesQuery);
-        const agentTaskMap = new Map<string, { tasks: { [key: string]: number }, totalHours: number }>();
+        const agentAnalytics: { [key: string]: AgentTaskAnalytics } = {};
 
-        schedulesSnapshot.docs.forEach((doc) => {
-          const schedule = doc.data();
-          const scheduleDate = parseISO(schedule.date);
-          
-          // Skip if outside date range
-          if (startDate && endDate) {
-            if (!isWithinInterval(scheduleDate, { start: startDate, end: endDate })) {
-              return;
-            }
-          }
-
-          // Process agent tasks
-          if (schedule.agents) {
-            schedule.agents.forEach((agent: any) => {
-              // Skip if agent filter is active and doesn't match
-              if (selectedAgent && agent.name !== selectedAgent) {
-                return;
+        schedulesSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          // Process data if we have agents and either no date filter or matching date range
+          if (data.agents && (!startDate || !endDate || 
+              isWithinInterval(parseISO(data.date), { 
+                start: startOfDay(startDate), 
+                end: endOfDay(endDate) 
+              }))) {
+            data.agents.forEach((agent: any) => {
+              if (!agentAnalytics[agent.name]) {
+                agentAnalytics[agent.name] = {
+                  name: agent.name,
+                  tasks: {},
+                  totalHours: 0
+                };
               }
 
-              if (!agentTaskMap.has(agent.name)) {
-                agentTaskMap.set(agent.name, { tasks: {}, totalHours: 0 });
-              }
-              
-              const agentData = agentTaskMap.get(agent.name)!;
-              
               agent.tasks.forEach((task: any) => {
-                const taskType = task.taskType;
-                const hours = schedule.interval;
+                // Skip counting hours for '-' task type
+                if (task.taskType === '-') return;
+
+                // Parse time slot
+                const [startTime, endTime] = task.timeSlot.split(' - ');
+                const [startHour] = startTime.split(':');
+                const [endHour] = endTime.split(':');
                 
-                agentData.tasks[taskType] = (agentData.tasks[taskType] || 0) + hours;
-                agentData.totalHours += hours;
+                // Calculate hours, defaulting to schedule interval if parsing fails
+                let hours = 0;
+                if (startHour && endHour) {
+                  hours = parseInt(endHour) - parseInt(startHour);
+                  if (hours < 0) hours += 24; // Handle overnight shifts
+                } else if (data.interval) {
+                  hours = data.interval;
+                }
+
+                if (!agentAnalytics[agent.name].tasks[task.taskType]) {
+                  agentAnalytics[agent.name].tasks[task.taskType] = 0;
+                }
+                agentAnalytics[agent.name].tasks[task.taskType] += hours;
+                agentAnalytics[agent.name].totalHours += hours;
               });
             });
           }
         });
 
-        const agentAnalytics = Array.from(agentTaskMap.entries()).map(([name, data]) => ({
-          name,
-          tasks: data.tasks,
-          totalHours: data.totalHours
-        }));
+        // Filter by selected agent if specified
+        let filteredAnalytics = Object.values(agentAnalytics);
+        if (selectedAgent) {
+          filteredAnalytics = filteredAnalytics.filter(a => a.name === selectedAgent);
+        }
 
-        setAnalyticsData({ agentAnalytics });
+        setAnalyticsData({ agentAnalytics: filteredAnalytics });
         setLoading(false);
 
       } catch (error) {
         console.error('Error fetching analytics data:', error);
+        setLoading(false);
       }
     };
 

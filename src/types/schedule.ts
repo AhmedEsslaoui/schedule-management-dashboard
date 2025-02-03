@@ -11,6 +11,7 @@ export type TaskType =
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
   | 'Kenya Calls'
+  | '-'
   | 'Sick'
   | 'No Show';
 

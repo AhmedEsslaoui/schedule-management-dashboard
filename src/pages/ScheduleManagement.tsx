@@ -79,9 +79,10 @@ type TaskType =
   | 'Emails (Need attention)+Reviews+Groups+Calls'
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
+  | 'Kenya Calls'
+  | '-'
   | 'Sick'
-  | 'No Show'
-  | 'Kenya Calls';
+  | 'No Show';
 
 const timeFrames = [
   { value: 'Day', label: 'Day (08:00 - 20:00)' },
@@ -101,9 +102,10 @@ const taskTypes = [
   { value: 'Emails (Need attention)+Reviews+Groups+Calls' as TaskType, label: 'Emails (Need attention)+Reviews+Groups+Calls' },
   { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
   { value: 'Emails' as TaskType, label: 'Emails' },
+  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },
+  { value: '-' as TaskType, label: '-' },
   { value: 'Sick' as TaskType, label: 'Sick' },
-  { value: 'No Show' as TaskType, label: 'No Show' },
-  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' }
+  { value: 'No Show' as TaskType, label: 'No Show' }
 ];
 
 const countries = ['Egypt', 'Morocco', 'Africa'];

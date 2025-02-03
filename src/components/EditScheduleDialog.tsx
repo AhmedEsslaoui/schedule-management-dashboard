@@ -41,6 +41,7 @@ type TaskType =
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
   | 'Kenya Calls'
+  | '-'
   | 'Sick'
   | 'No Show';
 
@@ -89,6 +90,7 @@ const taskTypes = [
   { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
   { value: 'Emails' as TaskType, label: 'Emails' },
   { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },
+  { value: '-' as TaskType, label: '-' },
   { value: 'Sick' as TaskType, label: 'Sick' },
   { value: 'No Show' as TaskType, label: 'No Show' }
 ];
