@@ -902,10 +902,32 @@ export default function ScheduleManagement() {
                           // Only check time slots for the currently selected agent
                           const currentAgent = agents.find(a => a.id === selectedAgent);
                           const isSlotTaken = currentAgent?.timeSlots.some(t => {
-                            const [slotStart, slotEnd] = slot.split(' - ');
-                            return t.startTime === slotStart && t.endTime === slotEnd;
+                            // Convert times to comparable numbers
+                            const taskStartNum = parseInt(t.startTime.replace(':', ''));
+                            const taskEndNum = parseInt(t.endTime.replace(':', ''));
+                            const slotStartNum = parseInt(slot.split('-')[0].replace(':', ''));
+                            const slotEndNum = parseInt(slot.split('-')[1].replace(':', ''));
+
+                            // For all shifts, first try exact matching
+                            if (t.startTime.trim() === slot.split('-')[0].trim() && t.endTime.trim() === slot.split('-')[1].trim()) {
+                              return true;
+                            }
+
+                            // For overlapping slots in afternoon/night shifts
+                            if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+                              return (
+                                // Task starts during the slot
+                                (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
+                                // Task ends during the slot
+                                (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
+                                // Task completely contains the slot
+                                (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                              );
+                            }
+
+                            // For day shift, only use exact matching
+                            return false;
                           });
-                          
                           return (
                             <MenuItem 
                               key={slot} 
@@ -1001,18 +1023,31 @@ export default function ScheduleManagement() {
                             {getTimeSlots(newSchedule.timeFrame, newSchedule.interval).map((slot) => {
                               const [slotStart, slotEnd] = slot.split('-');
                               const task = agent.timeSlots.find(t => {
+                                // Convert times to comparable numbers
                                 const taskStartNum = parseInt(t.startTime.replace(':', ''));
                                 const taskEndNum = parseInt(t.endTime.replace(':', ''));
                                 const slotStartNum = parseInt(slotStart.replace(':', ''));
                                 const slotEndNum = parseInt(slotEnd.replace(':', ''));
-                                return (
-                                  // Task starts during the slot
-                                  (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-                                  // Task ends during the slot
-                                  (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-                                  // Task completely contains the slot
-                                  (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
-                                );
+
+                                // For all shifts, first try exact matching
+                                if (t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim()) {
+                                  return true;
+                                }
+
+                                // For overlapping slots in afternoon/night shifts
+                                if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+                                  return (
+                                    // Task starts during the slot
+                                    (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
+                                    // Task ends during the slot
+                                    (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
+                                    // Task completely contains the slot
+                                    (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                                  );
+                                }
+
+                                // For day shift, only use exact matching
+                                return false;
                               });
                               return (
                                 <TableCell key={slot} align="center" sx={{
@@ -1066,8 +1101,31 @@ export default function ScheduleManagement() {
       const slot = allSlots[i];
       const currentAgent = agents.find(a => a.id === selectedAgent);
       const isSlotTaken = currentAgent?.timeSlots.some(t => {
-        const [slotStart, slotEnd] = slot.split('-');
-        return t.startTime === slotStart && t.endTime === slotEnd;
+        // Convert times to comparable numbers
+        const taskStartNum = parseInt(t.startTime.replace(':', ''));
+        const taskEndNum = parseInt(t.endTime.replace(':', ''));
+        const slotStartNum = parseInt(slot.split('-')[0].replace(':', ''));
+        const slotEndNum = parseInt(slot.split('-')[1].replace(':', ''));
+
+        // For all shifts, first try exact matching
+        if (t.startTime.trim() === slot.split('-')[0].trim() && t.endTime.trim() === slot.split('-')[1].trim()) {
+          return true;
+        }
+
+        // For overlapping slots in afternoon/night shifts
+        if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+          return (
+            // Task starts during the slot
+            (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
+            // Task ends during the slot
+            (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
+            // Task completely contains the slot
+            (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+          );
+        }
+
+        // For day shift, only use exact matching
+        return false;
       });
 
       if (!isSlotTaken) {
@@ -1088,10 +1146,34 @@ export default function ScheduleManagement() {
       const agentIndex = updatedAgents.findIndex(a => a.id === selectedAgent);
       
       // Check if agent already has a task in this time slot
-      const hasConflict = agentIndex !== -1 && updatedAgents[agentIndex].timeSlots.some(slot => 
-        slot.startTime === startTime && slot.endTime === endTime
-      );
+      const hasConflict = agentIndex !== -1 && updatedAgents[agentIndex].timeSlots.some(slot => {
+        // Convert times to comparable numbers
+        const taskStartNum = parseInt(slot.startTime.replace(':', ''));
+        const taskEndNum = parseInt(slot.endTime.replace(':', ''));
+        const slotStartNum = parseInt(startTime.replace(':', ''));
+        const slotEndNum = parseInt(endTime.replace(':', ''));
 
+        // For all shifts, first try exact matching
+        if (slot.startTime.trim() === startTime.trim() && slot.endTime.trim() === endTime.trim()) {
+          return true;
+        }
+
+        // For overlapping slots in afternoon/night shifts
+        if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+          return (
+            // Task starts during the slot
+            (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
+            // Task ends during the slot
+            (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
+            // Task completely contains the slot
+            (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+          );
+        }
+
+        // For day shift, only use exact matching
+        return false;
+      });
+      
       if (hasConflict) {
         alert('Agent already has a task assigned for this time slot');
         return prevAgents;
@@ -1193,8 +1275,12 @@ export default function ScheduleManagement() {
       const aTime = parseInt(a.startTime.replace(':', ''));
       const bTime = parseInt(b.startTime.replace(':', ''));
       // For night shift, adjust times after midnight to be larger than evening times
-      const adjustedATime = selectedViewSchedule?.timeFrame === 'Night' && aTime < 1000 ? aTime + 2400 : aTime;
-      const adjustedBTime = selectedViewSchedule?.timeFrame === 'Night' && bTime < 1000 ? bTime + 2400 : bTime;
+      const adjustedATime = selectedViewSchedule?.timeFrame === 'Night' && aTime < 1000 
+        ? aTime + 2400 
+        : aTime;
+      const adjustedBTime = selectedViewSchedule?.timeFrame === 'Night' && bTime < 1000 
+        ? bTime + 2400 
+        : bTime;
       return adjustedATime - adjustedBTime;
     });
 
@@ -1386,16 +1472,25 @@ export default function ScheduleManagement() {
                                       const slotStartNum = parseInt(slotStart.replace(':', ''));
                                       const slotEndNum = parseInt(slotEnd.replace(':', ''));
 
-                                      // Handle time wrapping for afternoon and night shifts
-                                      const adjustedTaskEndNum = (schedule.timeFrame === 'Afternoon' || schedule.timeFrame === 'Night') && taskEndNum < 1000 
-                                        ? taskEndNum + 2400 
-                                        : taskEndNum;
-                                      const adjustedSlotEndNum = (schedule.timeFrame === 'Afternoon' || schedule.timeFrame === 'Night') && slotEndNum < 1000 
-                                        ? slotEndNum + 2400 
-                                        : slotEndNum;
+                                      // For all shifts, first try exact matching
+                                      if (t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim()) {
+                                        return true;
+                                      }
 
-                                      // Exact match for time slots
-                                      return t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim();
+                                      // For overlapping slots in afternoon/night shifts
+                                      if (schedule.timeFrame === 'Afternoon' || schedule.timeFrame === 'Night') {
+                                        return (
+                                          // Task starts during the slot
+                                          (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
+                                          // Task ends during the slot
+                                          (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
+                                          // Task completely contains the slot
+                                          (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                                        );
+                                      }
+
+                                      // For day shift, only use exact matching
+                                      return false;
                                     });
                                     return (
                                       <TableCell key={timeSlot} align="center">
@@ -1561,16 +1656,25 @@ export default function ScheduleManagement() {
                             const slotStartNum = parseInt(slotStart.replace(':', ''));
                             const slotEndNum = parseInt(slotEnd.replace(':', ''));
 
-                            // Handle time wrapping for afternoon and night shifts
-                            const adjustedTaskEndNum = (selectedViewSchedule.timeFrame === 'Afternoon' || selectedViewSchedule.timeFrame === 'Night') && taskEndNum < 1000 
-                              ? taskEndNum + 2400 
-                              : taskEndNum;
-                            const adjustedSlotEndNum = (selectedViewSchedule.timeFrame === 'Afternoon' || selectedViewSchedule.timeFrame === 'Night') && slotEndNum < 1000 
-                              ? slotEndNum + 2400 
-                              : slotEndNum;
+                            // For all shifts, first try exact matching
+                            if (t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim()) {
+                              return true;
+                            }
 
-                            // Exact match for time slots
-                            return t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim();
+                            // For overlapping slots in afternoon/night shifts
+                            if (selectedViewSchedule.timeFrame === 'Afternoon' || selectedViewSchedule.timeFrame === 'Night') {
+                              return (
+                                // Task starts during the slot
+                                (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
+                                // Task ends during the slot
+                                (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
+                                // Task completely contains the slot
+                                (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                              );
+                            }
+
+                            // For day shift, only use exact matching
+                            return false;
                           });
                           return (
                             <TableCell key={timeSlot} align="center">
