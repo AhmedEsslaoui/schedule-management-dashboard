@@ -23,6 +23,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { taskTypes } from '../utils/taskTypes';
 
 type TaskType = 
   | 'Chat'
@@ -70,23 +71,6 @@ interface Schedule {
   createdAt: string;
   updatedAt: string;
 }
-
-const taskTypes = [
-  { value: 'Chat' as TaskType, label: 'Chat' },
-  { value: 'Chat/Appeals+Reviews' as TaskType, label: 'Chat/Appeals+Reviews' },
-  { value: 'Appeals/Reviews' as TaskType, label: 'Appeals/Reviews' },
-  { value: 'Appeals/Reviews/Calls' as TaskType, label: 'Appeals/Reviews/Calls' },
-  { value: 'Calls' as TaskType, label: 'Calls' },
-  { value: 'Calls/App follow' as TaskType, label: 'Calls/App follow' },
-  { value: 'Chat/Emails+Groups+Calls' as TaskType, label: 'Chat/Emails+Groups+Calls' },
-  { value: 'All Tasks+Calls' as TaskType, label: 'All Tasks+Calls' },
-  { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
-  { value: 'Emails' as TaskType, label: 'Emails' },
-  { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },
-  { value: '-' as TaskType, label: '-' },
-  { value: 'Sick' as TaskType, label: 'Sick' },
-  { value: 'No Show' as TaskType, label: 'No Show' }
-];
 
 export default function ScheduleCreate() {
   const [title, setTitle] = useState('');

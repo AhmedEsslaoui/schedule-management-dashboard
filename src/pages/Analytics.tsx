@@ -34,9 +34,9 @@ type TaskType =
   | 'Appeals/Reviews/Calls/App follow'
   | 'Emails'
   | 'Kenya Calls'
-  | '-'
-  | 'Sick'
-  | 'No Show';
+  | 'Reviews +Kenya'
+  | 'Chat + kenya'
+  | 'Emails + Kenya';
 
 type TaskCounts = {
   [key: string]: number | undefined;
@@ -50,7 +50,9 @@ type TaskCounts = {
   'Chat/Appeals/Reviews/Calls'?: number;
   'Chat/Emails+Groups+Calls'?: number;
   'Emails/Appeals/Calls'?: number;
-  'No Show'?: number;
+  'Reviews +Kenya'?: number;
+  'Chat + kenya'?: number;
+  'Emails + Kenya'?: number;
 };
 
 const taskTypes = [
@@ -65,9 +67,9 @@ const taskTypes = [
   { value: 'Appeals/Reviews/Calls/App follow' as TaskType, label: 'Appeals/Reviews/Calls/App follow' },
   { value: 'Emails' as TaskType, label: 'Emails' },
   { value: 'Kenya Calls' as TaskType, label: 'Kenya Calls' },
-  { value: '-' as TaskType, label: '-' },
-  { value: 'Sick' as TaskType, label: 'Sick' },
-  { value: 'No Show' as TaskType, label: 'No Show' }
+  { value: 'Reviews +Kenya' as TaskType, label: 'Reviews +Kenya' },
+  { value: 'Chat + kenya' as TaskType, label: 'Chat + kenya' },
+  { value: 'Emails + Kenya' as TaskType, label: 'Emails + Kenya' }
 ];
 
 interface AgentTaskAnalytics {
