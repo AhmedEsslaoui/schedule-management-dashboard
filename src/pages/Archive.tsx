@@ -175,13 +175,13 @@ export default function Archive() {
                 </Grid>
                 <Grid item xs={12}>
                   <Typography variant="subtitle2" gutterBottom>Agents and Tasks</Typography>
-                  {selectedSchedule.agents.map((agent) => (
+                  {(selectedSchedule.agents || []).map((agent) => (
                     <Paper key={agent.id} sx={{ p: 2, mb: 2 }}>
                       <Typography variant="subtitle1" gutterBottom>
                         {agent.name}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {agent.timeSlots.map((task, index) => (
+                        {(agent.timeSlots || []).map((task, index) => (
                           <Chip
                             key={index}
                             label={`${task.startTime}-${task.endTime}: ${task.taskType}${task.hasBreak ? ' (Break)' : ''}`}
