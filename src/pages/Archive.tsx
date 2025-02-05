@@ -22,14 +22,16 @@ import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/f
 import { db } from '../config/firebase';
 
 interface Task {
-  timeSlot: string;
+  startTime: string;
+  endTime: string;
   taskType: string;
+  hasBreak?: boolean;
 }
 
 interface Agent {
   id: string;
   name: string;
-  tasks: Task[];
+  timeSlots: Task[];
 }
 
 interface Schedule {
@@ -179,10 +181,10 @@ export default function Archive() {
                         {agent.name}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {agent.tasks.map((task, index) => (
+                        {agent.timeSlots.map((task, index) => (
                           <Chip
                             key={index}
-                            label={`${task.timeSlot} - ${task.taskType}`}
+                            label={`${task.startTime}-${task.endTime}: ${task.taskType}${task.hasBreak ? ' (Break)' : ''}`}
                             variant="outlined"
                           />
                         ))}
