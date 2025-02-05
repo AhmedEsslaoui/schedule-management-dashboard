@@ -908,24 +908,29 @@ export default function ScheduleManagement() {
                             const slotStartNum = parseInt(slot.split('-')[0].replace(':', ''));
                             const slotEndNum = parseInt(slot.split('-')[1].replace(':', ''));
 
-                            // For all shifts, first try exact matching
-                            if (t.startTime.trim() === slot.split('-')[0].trim() && t.endTime.trim() === slot.split('-')[1].trim()) {
+                            // For exact matching
+                            if (t.startTime === slot.split('-')[0] && t.endTime === slot.split('-')[1]) {
                               return true;
                             }
 
-                            // For overlapping slots in afternoon/night shifts
-                            if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+                            // For night shift, adjust numbers for comparison
+                            if (newSchedule.timeFrame === 'Night') {
+                              // Adjust end times after midnight
+                              const adjustedTaskEndNum = taskEndNum < taskStartNum ? taskEndNum + 2400 : taskEndNum;
+                              const adjustedSlotEndNum = slotEndNum < slotStartNum ? slotEndNum + 2400 : slotEndNum;
+                              
+                              // Check if the slots overlap
                               return (
-                                // Task starts during the slot
-                                (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-                                // Task ends during the slot
-                                (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-                                // Task completely contains the slot
-                                (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                                // Check if task starts during the slot
+                                (taskStartNum >= slotStartNum && taskStartNum < adjustedSlotEndNum) ||
+                                // Check if task ends during the slot
+                                (adjustedTaskEndNum > slotStartNum && adjustedTaskEndNum <= adjustedSlotEndNum) ||
+                                // Check if task completely contains the slot
+                                (taskStartNum <= slotStartNum && adjustedTaskEndNum >= adjustedSlotEndNum)
                               );
                             }
 
-                            // For day shift, only use exact matching
+                            // For day and afternoon shifts, use exact matching only
                             return false;
                           });
                           return (
@@ -1029,24 +1034,29 @@ export default function ScheduleManagement() {
                                 const slotStartNum = parseInt(slotStart.replace(':', ''));
                                 const slotEndNum = parseInt(slotEnd.replace(':', ''));
 
-                                // For all shifts, first try exact matching
-                                if (t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim()) {
+                                // For exact matching
+                                if (t.startTime === slotStart && t.endTime === slotEnd) {
                                   return true;
                                 }
 
-                                // For overlapping slots in afternoon/night shifts
-                                if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+                                // For night shift, adjust numbers for comparison
+                                if (newSchedule.timeFrame === 'Night') {
+                                  // Adjust end times after midnight
+                                  const adjustedTaskEndNum = taskEndNum < taskStartNum ? taskEndNum + 2400 : taskEndNum;
+                                  const adjustedSlotEndNum = slotEndNum < slotStartNum ? slotEndNum + 2400 : slotEndNum;
+                                  
+                                  // Check if the slots overlap
                                   return (
-                                    // Task starts during the slot
-                                    (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-                                    // Task ends during the slot
-                                    (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-                                    // Task completely contains the slot
-                                    (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                                    // Check if task starts during the slot
+                                    (taskStartNum >= slotStartNum && taskStartNum < adjustedSlotEndNum) ||
+                                    // Check if task ends during the slot
+                                    (adjustedTaskEndNum > slotStartNum && adjustedTaskEndNum <= adjustedSlotEndNum) ||
+                                    // Check if task completely contains the slot
+                                    (taskStartNum <= slotStartNum && adjustedTaskEndNum >= adjustedSlotEndNum)
                                   );
                                 }
 
-                                // For day shift, only use exact matching
+                                // For day and afternoon shifts, use exact matching only
                                 return false;
                               });
                               return (
@@ -1107,24 +1117,29 @@ export default function ScheduleManagement() {
         const slotStartNum = parseInt(slot.split('-')[0].replace(':', ''));
         const slotEndNum = parseInt(slot.split('-')[1].replace(':', ''));
 
-        // For all shifts, first try exact matching
-        if (t.startTime.trim() === slot.split('-')[0].trim() && t.endTime.trim() === slot.split('-')[1].trim()) {
+        // For exact matching
+        if (t.startTime === slot.split('-')[0] && t.endTime === slot.split('-')[1]) {
           return true;
         }
 
-        // For overlapping slots in afternoon/night shifts
-        if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+        // For night shift, adjust numbers for comparison
+        if (newSchedule.timeFrame === 'Night') {
+          // Adjust end times after midnight
+          const adjustedTaskEndNum = taskEndNum < taskStartNum ? taskEndNum + 2400 : taskEndNum;
+          const adjustedSlotEndNum = slotEndNum < slotStartNum ? slotEndNum + 2400 : slotEndNum;
+          
+          // Check if the slots overlap
           return (
-            // Task starts during the slot
-            (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-            // Task ends during the slot
-            (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-            // Task completely contains the slot
-            (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+            // Check if task starts during the slot
+            (taskStartNum >= slotStartNum && taskStartNum < adjustedSlotEndNum) ||
+            // Check if task ends during the slot
+            (adjustedTaskEndNum > slotStartNum && adjustedTaskEndNum <= adjustedSlotEndNum) ||
+            // Check if task completely contains the slot
+            (taskStartNum <= slotStartNum && adjustedTaskEndNum >= adjustedSlotEndNum)
           );
         }
 
-        // For day shift, only use exact matching
+        // For day and afternoon shifts, use exact matching only
         return false;
       });
 
@@ -1153,24 +1168,29 @@ export default function ScheduleManagement() {
         const slotStartNum = parseInt(startTime.replace(':', ''));
         const slotEndNum = parseInt(endTime.replace(':', ''));
 
-        // For all shifts, first try exact matching
-        if (slot.startTime.trim() === startTime.trim() && slot.endTime.trim() === endTime.trim()) {
+        // For exact matching
+        if (slot.startTime === startTime && slot.endTime === endTime) {
           return true;
         }
 
-        // For overlapping slots in afternoon/night shifts
-        if (newSchedule.timeFrame === 'Afternoon' || newSchedule.timeFrame === 'Night') {
+        // For night shift, adjust numbers for comparison
+        if (newSchedule.timeFrame === 'Night') {
+          // Adjust end times after midnight
+          const adjustedTaskEndNum = taskEndNum < taskStartNum ? taskEndNum + 2400 : taskEndNum;
+          const adjustedSlotEndNum = slotEndNum < slotStartNum ? slotEndNum + 2400 : slotEndNum;
+          
+          // Check if the slots overlap
           return (
-            // Task starts during the slot
-            (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-            // Task ends during the slot
-            (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-            // Task completely contains the slot
-            (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+            // Check if task starts during the slot
+            (taskStartNum >= slotStartNum && taskStartNum < adjustedSlotEndNum) ||
+            // Check if task ends during the slot
+            (adjustedTaskEndNum > slotStartNum && adjustedTaskEndNum <= adjustedSlotEndNum) ||
+            // Check if task completely contains the slot
+            (taskStartNum <= slotStartNum && adjustedTaskEndNum >= adjustedSlotEndNum)
           );
         }
 
-        // For day shift, only use exact matching
+        // For day and afternoon shifts, use exact matching only
         return false;
       });
       
@@ -1472,24 +1492,29 @@ export default function ScheduleManagement() {
                                       const slotStartNum = parseInt(slotStart.replace(':', ''));
                                       const slotEndNum = parseInt(slotEnd.replace(':', ''));
 
-                                      // For all shifts, first try exact matching
-                                      if (t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim()) {
+                                      // For exact matching
+                                      if (t.startTime === slotStart && t.endTime === slotEnd) {
                                         return true;
                                       }
 
-                                      // For overlapping slots in afternoon/night shifts
-                                      if (schedule.timeFrame === 'Afternoon' || schedule.timeFrame === 'Night') {
+                                      // For night shift, adjust numbers for comparison
+                                      if (schedule.timeFrame === 'Night') {
+                                        // Adjust end times after midnight
+                                        const adjustedTaskEndNum = taskEndNum < taskStartNum ? taskEndNum + 2400 : taskEndNum;
+                                        const adjustedSlotEndNum = slotEndNum < slotStartNum ? slotEndNum + 2400 : slotEndNum;
+                                        
+                                        // Check if the slots overlap
                                         return (
-                                          // Task starts during the slot
-                                          (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-                                          // Task ends during the slot
-                                          (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-                                          // Task completely contains the slot
-                                          (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                                          // Check if task starts during the slot
+                                          (taskStartNum >= slotStartNum && taskStartNum < adjustedSlotEndNum) ||
+                                          // Check if task ends during the slot
+                                          (adjustedTaskEndNum > slotStartNum && adjustedTaskEndNum <= adjustedSlotEndNum) ||
+                                          // Check if task completely contains the slot
+                                          (taskStartNum <= slotStartNum && adjustedTaskEndNum >= adjustedSlotEndNum)
                                         );
                                       }
 
-                                      // For day shift, only use exact matching
+                                      // For day and afternoon shifts, use exact matching only
                                       return false;
                                     });
                                     return (
@@ -1656,24 +1681,29 @@ export default function ScheduleManagement() {
                             const slotStartNum = parseInt(slotStart.replace(':', ''));
                             const slotEndNum = parseInt(slotEnd.replace(':', ''));
 
-                            // For all shifts, first try exact matching
-                            if (t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim()) {
+                            // For exact matching
+                            if (t.startTime === slotStart && t.endTime === slotEnd) {
                               return true;
                             }
 
-                            // For overlapping slots in afternoon/night shifts
-                            if (selectedViewSchedule.timeFrame === 'Afternoon' || selectedViewSchedule.timeFrame === 'Night') {
+                            // For night shift, adjust numbers for comparison
+                            if (selectedViewSchedule.timeFrame === 'Night') {
+                              // Adjust end times after midnight
+                              const adjustedTaskEndNum = taskEndNum < taskStartNum ? taskEndNum + 2400 : taskEndNum;
+                              const adjustedSlotEndNum = slotEndNum < slotStartNum ? slotEndNum + 2400 : slotEndNum;
+                              
+                              // Check if the slots overlap
                               return (
-                                // Task starts during the slot
-                                (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-                                // Task ends during the slot
-                                (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-                                // Task completely contains the slot
-                                (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                                // Check if task starts during the slot
+                                (taskStartNum >= slotStartNum && taskStartNum < adjustedSlotEndNum) ||
+                                // Check if task ends during the slot
+                                (adjustedTaskEndNum > slotStartNum && adjustedTaskEndNum <= adjustedSlotEndNum) ||
+                                // Check if task completely contains the slot
+                                (taskStartNum <= slotStartNum && adjustedTaskEndNum >= adjustedSlotEndNum)
                               );
                             }
 
-                            // For day shift, only use exact matching
+                            // For day and afternoon shifts, use exact matching only
                             return false;
                           });
                           return (
