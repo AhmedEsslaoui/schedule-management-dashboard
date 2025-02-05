@@ -89,10 +89,11 @@ const generateTimeSlots = (schedule: Schedule) => {
   
   const endTime = new Date();
   const endHour = parseInt(schedule.endTime.split(':')[0]);
-  // Handle midnight case (convert 24 to 0)
-  endTime.setHours(endHour === 24 ? 0 : endHour, 0, 0);
-  if (endHour === 24 || endHour === 0) {
-    endTime.setDate(endTime.getDate() + 1); // Add one day for midnight
+  endTime.setHours(endHour, 0, 0);
+  
+  // For night shift or when end time is less than start time (crossing midnight)
+  if (parseInt(schedule.startTime.split(':')[0]) > endHour || endHour === 0) {
+    endTime.setDate(endTime.getDate() + 1); // Add one day
   }
   
   while (currentTime < endTime) {
