@@ -223,8 +223,10 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
       return;
     }
 
+    const [startTime, endTime] = selectedTimeSlot.split('-').map(t => t.trim());
+    
     const isTimeSlotTaken = editedSchedule.agents[existingAgentIndex].timeSlots.some(
-      task => task.startTime === selectedTimeSlot.split('-')[0] && task.endTime === selectedTimeSlot.split('-')[1]
+      task => task.startTime.trim() === startTime && task.endTime.trim() === endTime
     );
 
     if (isTimeSlotTaken) {
@@ -233,8 +235,8 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
     }
 
     const newTask = {
-      startTime: selectedTimeSlot.split('-')[0],
-      endTime: selectedTimeSlot.split('-')[1],
+      startTime,
+      endTime,
       taskType: selectedTaskType,
       hasBreak: includeBreak
     };
@@ -301,7 +303,7 @@ export default function EditScheduleDialog({ open, onClose, schedule, onUpdate, 
                         color="error"
                         size="small"
                       >
-                        <EditIcon />
+                        <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
                     

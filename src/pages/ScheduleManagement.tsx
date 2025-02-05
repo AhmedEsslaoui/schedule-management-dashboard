@@ -1001,7 +1001,18 @@ export default function ScheduleManagement() {
                             {getTimeSlots(newSchedule.timeFrame, newSchedule.interval).map((slot) => {
                               const [slotStart, slotEnd] = slot.split('-');
                               const task = agent.timeSlots.find(t => {
-                                return t.startTime === slotStart && t.endTime === slotEnd;
+                                const taskStartNum = parseInt(t.startTime.replace(':', ''));
+                                const taskEndNum = parseInt(t.endTime.replace(':', ''));
+                                const slotStartNum = parseInt(slotStart.replace(':', ''));
+                                const slotEndNum = parseInt(slotEnd.replace(':', ''));
+                                return (
+                                  // Task starts during the slot
+                                  (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
+                                  // Task ends during the slot
+                                  (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
+                                  // Task completely contains the slot
+                                  (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
+                                );
                               });
                               return (
                                 <TableCell key={slot} align="center" sx={{
@@ -1369,18 +1380,22 @@ export default function ScheduleManagement() {
                                   {getTimeSlots(schedule.timeFrame, schedule.interval).map((timeSlot) => {
                                     const [slotStart, slotEnd] = timeSlot.split('-');
                                     const task = agent.timeSlots?.find(t => {
+                                      // Convert times to comparable numbers
                                       const taskStartNum = parseInt(t.startTime.replace(':', ''));
                                       const taskEndNum = parseInt(t.endTime.replace(':', ''));
                                       const slotStartNum = parseInt(slotStart.replace(':', ''));
                                       const slotEndNum = parseInt(slotEnd.replace(':', ''));
-                                      return (
-                                        // Task starts during the slot
-                                        (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-                                        // Task ends during the slot
-                                        (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-                                        // Task completely contains the slot
-                                        (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
-                                      );
+
+                                      // Handle time wrapping for afternoon and night shifts
+                                      const adjustedTaskEndNum = (schedule.timeFrame === 'Afternoon' || schedule.timeFrame === 'Night') && taskEndNum < 1000 
+                                        ? taskEndNum + 2400 
+                                        : taskEndNum;
+                                      const adjustedSlotEndNum = (schedule.timeFrame === 'Afternoon' || schedule.timeFrame === 'Night') && slotEndNum < 1000 
+                                        ? slotEndNum + 2400 
+                                        : slotEndNum;
+
+                                      // Exact match for time slots
+                                      return t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim();
                                     });
                                     return (
                                       <TableCell key={timeSlot} align="center">
@@ -1540,18 +1555,22 @@ export default function ScheduleManagement() {
                         {getTimeSlots(selectedViewSchedule.timeFrame, selectedViewSchedule.interval).map((timeSlot) => {
                           const [slotStart, slotEnd] = timeSlot.split('-');
                           const task = agent.timeSlots.find(t => {
+                            // Convert times to comparable numbers
                             const taskStartNum = parseInt(t.startTime.replace(':', ''));
                             const taskEndNum = parseInt(t.endTime.replace(':', ''));
                             const slotStartNum = parseInt(slotStart.replace(':', ''));
                             const slotEndNum = parseInt(slotEnd.replace(':', ''));
-                            return (
-                              // Task starts during the slot
-                              (taskStartNum >= slotStartNum && taskStartNum < slotEndNum) ||
-                              // Task ends during the slot
-                              (taskEndNum > slotStartNum && taskEndNum <= slotEndNum) ||
-                              // Task completely contains the slot
-                              (taskStartNum <= slotStartNum && taskEndNum >= slotEndNum)
-                            );
+
+                            // Handle time wrapping for afternoon and night shifts
+                            const adjustedTaskEndNum = (selectedViewSchedule.timeFrame === 'Afternoon' || selectedViewSchedule.timeFrame === 'Night') && taskEndNum < 1000 
+                              ? taskEndNum + 2400 
+                              : taskEndNum;
+                            const adjustedSlotEndNum = (selectedViewSchedule.timeFrame === 'Afternoon' || selectedViewSchedule.timeFrame === 'Night') && slotEndNum < 1000 
+                              ? slotEndNum + 2400 
+                              : slotEndNum;
+
+                            // Exact match for time slots
+                            return t.startTime.trim() === slotStart.trim() && t.endTime.trim() === slotEnd.trim();
                           });
                           return (
                             <TableCell key={timeSlot} align="center">
