@@ -117,7 +117,8 @@ service cloud.firestore {
         'kawthar.lfayres@indriver.com',
         'sara.aziz@indriver.com',
         'diaa.mahmoud@indriver.com',
-        'yasmin.mani@indriver.com'
+        'yasmin.mani@indriver.com',
+        'rym.elamri@indriver.com'
       ];
       return isAuthenticated() && 
              authorizedEmails.hasAny([request.auth.token.email.lower()]);
