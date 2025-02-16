@@ -101,7 +101,7 @@ type TaskType =
 
 const timeFrames = [
   { value: 'Day', label: 'Day (08:00 - 20:00)' },
-  { value: 'Afternoon', label: 'Afternoon (12:00 - 00:00)' },
+  { value: 'Afternoon', label: 'Afternoon (14:00 - 02:00)' },
   { value: 'Night', label: 'Night (20:00 - 08:00)' }
 ];
 
@@ -152,7 +152,12 @@ const getTimeSlots = (timeFrame: string, interval: number = 2) => {
     case 'Day':
       return generateSlots(8, 20);
     case 'Afternoon':
-      return generateSlots(12, 24);
+      // For afternoon shift (14:00-02:00), handle the day change
+      if (interval === 3) {
+        return ['14:00-17:00', '17:00-20:00', '20:00-23:00', '23:00-02:00'];
+      } else {
+        return ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00', '22:00-00:00', '00:00-02:00'];
+      }
     case 'Night':
       // Night shift remains special case due to day change
       if (interval === 3) {
@@ -333,15 +338,23 @@ export default function ScheduleManagement() {
     if (newSchedule.timeFrame === 'Afternoon') {
       // Special handling for afternoon shift with 3-hour intervals
       const afternoonSlots = [];
-      let currentHour = 12; // Start at 12:00
+      let currentHour = 14; // Start at 14:00
       
+      // Handle hours from 14:00 to midnight
       while (currentHour < 24) {
         const nextHour = Math.min(currentHour + interval, 24);
-        if (currentHour >= 12) { // Only add slots starting from 12:00
-          afternoonSlots.push(formatTimeSlot(currentHour, nextHour));
-        }
+        afternoonSlots.push(formatTimeSlot(currentHour, nextHour));
         currentHour += interval;
       }
+
+      // Handle hours after midnight up to 02:00
+      currentHour = 0;
+      while (currentHour < 2) {
+        const nextHour = Math.min(currentHour + interval, 2);
+        afternoonSlots.push(formatTimeSlot(currentHour, nextHour));
+        currentHour += interval;
+      }
+      
       return afternoonSlots;
     }
 
@@ -500,7 +513,7 @@ export default function ScheduleManagement() {
       case 'Day':
         return { start: '08:00', end: '20:00' };
       case 'Afternoon':
-        return { start: '12:00', end: '00:00' };
+        return { start: '14:00', end: '02:00' };
       case 'Night':
         return { start: '20:00', end: '08:00' };
       default:

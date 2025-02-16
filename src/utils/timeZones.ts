@@ -8,7 +8,7 @@ const TIME_ZONES = {
 
 const SHIFT_TIMES = {
   Day: { start: 8, end: 20 },      // 08:00 - 20:00
-  Afternoon: { start: 12, end: 0 }, // 12:00 - 00:00
+  Afternoon: { start: 14, end: 2 }, // 14:00 - 02:00
   Night: { start: 20, end: 8 }     // 20:00 - 08:00
 };
 

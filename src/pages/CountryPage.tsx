@@ -203,8 +203,8 @@ export default function CountryPage() {
   const sortTimeSlots = (timeSlots: any[], timeFrame: string) => {
     const timeToMinutes = (time: string) => {
       const [hours, minutes] = time.split(':').map(Number);
-      // For times after midnight, add 24 hours to keep chronological order
-      return (hours < 12 && (timeFrame === 'Night' || timeFrame === 'Afternoon')) ? 
+      // For afternoon shift (14:00-02:00) and night shift (20:00-08:00), add 24 hours to times after midnight
+      return (hours < 12 && (timeFrame === 'Night' || (timeFrame === 'Afternoon' && hours < 2))) ? 
         ((hours + 24) * 60 + minutes) : 
         (hours * 60 + minutes);
     };

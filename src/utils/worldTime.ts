@@ -11,7 +11,7 @@ interface ShiftTime {
 
 const SHIFT_TIMES: { [key: string]: ShiftTime } = {
   Day: { start: 8, end: 20, crossesNextDay: false },      // 08:00 - 20:00 same day
-  Afternoon: { start: 12, end: 0, crossesNextDay: true }, // 12:00 - 00:00 next day
+  Afternoon: { start: 14, end: 2, crossesNextDay: true }, // 14:00 - 02:00 next day
   Night: { start: 20, end: 8, crossesNextDay: true }      // 20:00 - 08:00 next day
 };
 
