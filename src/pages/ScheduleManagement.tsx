@@ -131,8 +131,16 @@ const steps = ['Creation Method', 'Basic Information', 'Time Configuration', 'Ag
 
 const getTimeSlots = (timeFrame: string, interval: number = 2) => {
   const formatSlot = (start: number, end: number) => {
-    const startStr = (start === 24 ? '00' : start.toString().padStart(2, '0'));
-    const endStr = (end === 24 ? '00' : end.toString().padStart(2, '0'));
+    // Convert hours > 24 to next day hours
+    const formatHour = (hour: number) => {
+      if (hour >= 24) {
+        return (hour - 24).toString().padStart(2, '0');
+      }
+      return hour.toString().padStart(2, '0');
+    };
+
+    const startStr = formatHour(start);
+    const endStr = formatHour(end);
     return `${startStr}:00-${endStr}:00`;
   };
 
