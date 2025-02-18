@@ -60,7 +60,15 @@ export default function Archive() {
         id: doc.id,
         ...doc.data()
       } as Schedule));
-      setArchivedSchedules(schedules);
+      
+      // Sort schedules from newest to oldest
+      const sortedSchedules = schedules.sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return dateB - dateA; // Sort in descending order (newest first)
+      });
+      
+      setArchivedSchedules(sortedSchedules);
     });
 
     return () => unsubscribe();

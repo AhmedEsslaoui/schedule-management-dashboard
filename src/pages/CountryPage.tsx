@@ -68,7 +68,7 @@ interface Agent {
 interface Schedule {
   id: string;
   date: string;
-  timeFrame: 'Day' | 'Afternoon' | 'Night';
+  timeFrame: 'Day' | 'Afternoon' | 'Afternoon+' | 'Night';
   seniorName: string;
   country: string;
   agents: Agent[];
@@ -93,6 +93,12 @@ const timeFrameConfig = {
     color: '#5C6BC0',
     lightColor: '#E8EAF6',
     label: 'Afternoon'
+  },
+  'Afternoon+': {
+    icon: WbTwilightIcon,
+    color: '#7986CB',
+    lightColor: '#E8EAF6',
+    label: 'Afternoon+'
   },
   Night: {
     icon: DarkModeOutlinedIcon,
@@ -172,7 +178,8 @@ export default function CountryPage() {
   const timeFrameOrder = {
     'Day': 0,
     'Afternoon': 1,
-    'Night': 2
+    'Afternoon+': 2,
+    'Night': 3
   };
 
   const handleAccordionChange = (scheduleId: string, agentId: string) => 
@@ -204,7 +211,7 @@ export default function CountryPage() {
     const timeToMinutes = (time: string) => {
       const [hours, minutes] = time.split(':').map(Number);
       // For afternoon shift (14:00-02:00) and night shift (20:00-08:00), add 24 hours to times after midnight
-      return (hours < 12 && (timeFrame === 'Night' || (timeFrame === 'Afternoon' && hours < 2))) ? 
+      return (hours < 12 && (timeFrame === 'Night' || (timeFrame === 'Afternoon' && hours < 2) || (timeFrame === 'Afternoon+' && hours < 2))) ? 
         ((hours + 24) * 60 + minutes) : 
         (hours * 60 + minutes);
     };

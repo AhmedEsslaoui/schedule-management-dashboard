@@ -14,6 +14,7 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  Button,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -21,6 +22,7 @@ import { db } from '../config/firebase';
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { alpha } from '@mui/material/styles';
 import LoadingAnimation from '../components/LoadingAnimation';
+import DownloadIcon from '@mui/icons-material/Download';
 
 type TaskType = 
   | 'Chat'
@@ -81,6 +83,12 @@ interface AgentTaskAnalytics {
 interface AnalyticsData {
   agentAnalytics: AgentTaskAnalytics[];
 }
+
+const countryMap: { [key: string]: string } = {
+  'egypt': 'Egypt',
+  'morocco': 'Morocco',
+  'africa': 'Africa'
+};
 
 export default function Analytics() {
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -224,6 +232,37 @@ export default function Analytics() {
     fetchData();
   }, [startDate, endDate, selectedCountry, selectedAgent]);
 
+  const handleDownloadCSV = () => {
+    // Create CSV header
+    const headers = ['Agent Name', ...taskTypes.map(type => type.label), 'Total Hours'];
+    
+    // Create CSV rows
+    const rows = analyticsData.agentAnalytics.map(agent => {
+      return [
+        agent.name,
+        ...taskTypes.map(type => agent.tasks[type.value] || 0),
+        agent.totalHours
+      ];
+    });
+    
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `analytics_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -287,9 +326,9 @@ export default function Analytics() {
                 label="Country"
               >
                 <MenuItem value="">All Countries</MenuItem>
-                <MenuItem value="egypt">Egypt</MenuItem>
-                <MenuItem value="morocco">Morocco</MenuItem>
-                <MenuItem value="africa">Africa</MenuItem>
+                <MenuItem value="Egypt">Egypt</MenuItem>
+                <MenuItem value="Morocco">Morocco</MenuItem>
+                <MenuItem value="Africa">Africa</MenuItem>
               </Select>
             </FormControl>
             <FormControl sx={{ minWidth: 200 }}>
@@ -308,6 +347,23 @@ export default function Analytics() {
                 ))}
               </Select>
             </FormControl>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={handleDownloadCSV}
+              sx={{
+                height: 'fit-content',
+                alignSelf: 'center',
+                borderColor: '#E5E7EB',
+                color: '#374151',
+                '&:hover': {
+                  borderColor: '#9CA3AF',
+                  backgroundColor: '#F9FAFB',
+                }
+              }}
+            >
+              Download CSV
+            </Button>
           </Box>
 
           <TableContainer>

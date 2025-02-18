@@ -69,7 +69,7 @@ interface Agent {
 interface Schedule {
   id: string;
   date: string;
-  timeFrame: string;
+  timeFrame: 'Day' | 'Afternoon' | 'Afternoon+' | 'Night';
   startTime: string;
   endTime: string;
   interval: number;
@@ -102,6 +102,7 @@ type TaskType =
 const timeFrames = [
   { value: 'Day', label: 'Day (08:00 - 20:00)' },
   { value: 'Afternoon', label: 'Afternoon (14:00 - 02:00)' },
+  { value: 'Afternoon+', label: 'Afternoon+ (12:00 - 00:00)' },
   { value: 'Night', label: 'Night (20:00 - 08:00)' }
 ];
 
@@ -152,19 +153,11 @@ const getTimeSlots = (timeFrame: string, interval: number = 2) => {
     case 'Day':
       return generateSlots(8, 20);
     case 'Afternoon':
-      // For afternoon shift (14:00-02:00), handle the day change
-      if (interval === 3) {
-        return ['14:00-17:00', '17:00-20:00', '20:00-23:00', '23:00-02:00'];
-      } else {
-        return ['14:00-16:00', '16:00-18:00', '18:00-20:00', '20:00-22:00', '22:00-00:00', '00:00-02:00'];
-      }
+      return generateSlots(14, 26); // 26 represents 2:00 AM next day
+    case 'Afternoon+':
+      return generateSlots(12, 24); // 24 represents 00:00 (midnight)
     case 'Night':
-      // Night shift remains special case due to day change
-      if (interval === 3) {
-        return ['20:00-23:00', '23:00-02:00', '02:00-05:00', '05:00-08:00'];
-      } else {
-        return ['20:00-22:00', '22:00-00:00', '00:00-02:00', '02:00-04:00', '04:00-06:00', '06:00-08:00'];
-      }
+      return generateSlots(20, 32); // 32 represents 8:00 AM next day
     default:
       return [];
   }
@@ -514,6 +507,8 @@ export default function ScheduleManagement() {
         return { start: '08:00', end: '20:00' };
       case 'Afternoon':
         return { start: '14:00', end: '02:00' };
+      case 'Afternoon+':
+        return { start: '12:00', end: '00:00' };
       case 'Night':
         return { start: '20:00', end: '08:00' };
       default:
