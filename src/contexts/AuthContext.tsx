@@ -147,7 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       'diaa.mahmoud@indriver.com',
       'sara.aziz@indriver.com',
       'yasmin.mani@indriver.com',
-      'rym.elamri@indriver.com'
+      'rym.elamri@indriver.com',
+      'ranim.mefdaoui@indriver.com'
     ];
 
     if (authorizedEmails.map(e => e.toLowerCase()).includes(normalizedEmail)) {
