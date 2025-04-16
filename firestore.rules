@@ -119,7 +119,10 @@ service cloud.firestore {
         'diaa.mahmoud@indriver.com',
         'yasmin.mani@indriver.com',
         'rym.elamri@indriver.com',
-        'ranim.mefdaoui@indriver.com'
+        'ranim.mefdaoui@indriver.com',
+        'salsabyl.belkacem@indriver.com',
+        'noura.slama@indriver.com',
+        'rahma.belarbi@indriver.com'
       ];
       return isAuthenticated() && 
              authorizedEmails.hasAny([request.auth.token.email.lower()]);
