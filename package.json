@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build && cp public/_redirects dist/_redirects",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
-    "setup-auth": "node scripts/init-auth-db.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@emotion/react": "^11.11.3",
@@ -19,7 +18,6 @@
     "date-fns": "^2.30.0",
     "date-fns-tz": "^1.3.8",
     "firebase": "^10.7.1",
-    "firebase-admin": "^11.11.0",
     "framer-motion": "^12.0.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

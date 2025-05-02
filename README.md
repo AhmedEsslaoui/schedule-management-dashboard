@@ -2,13 +2,6 @@
 
 A modern, responsive web application for managing employee schedules across different countries. Built with React, TypeScript, Material-UI, and Firebase.
 
-## Live Platform
-You can access the published platform at: [https://sites.google.com/indriver.com/schedule-management/shifts-maker](https://sites.google.com/indriver.com/schedule-management/shifts-maker)
-
-## Author
-**Ahmed Esslaoui**  
-Support Contact: ahmed.esslaoui@indriver.com
-
 ## Features
 
 - **Authentication & Role-Based Access**
@@ -81,7 +74,6 @@ Support Contact: ahmed.esslaoui@indriver.com
    VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
    VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
    VITE_FIREBASE_APP_ID=your_app_id
-   VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
    ```
 
 5. Start the development server:
@@ -94,100 +86,49 @@ Support Contact: ahmed.esslaoui@indriver.com
    npm run build
    ```
 
-## Security Setup Guide
+## Firebase Security Rules
 
-### Firestore Authorization Structure
-
-This application uses a collection-based authorization system instead of hardcoded emails. Follow these steps to set up your authorization structure:
-
-1. Set up the `authorized_users` collection in Firestore with the following structure:
-   ```
-   authorized_users/{email}
-   ```
-
-   Each document should have:
-   - Document ID: The user's email address (in lowercase)
-   - Fields:
-     - `email` (string): The user's email address
-     - `isAdmin` (boolean): Whether the user has admin privileges
-     - `createdAt` (timestamp): When the user was added
-     - `updatedAt` (timestamp): When the user was last updated
-
-2. To add your first admin user (do this before deploying):
-   - Create a document in the `authorized_users` collection
-   - Set the document ID to your email address (lowercase)
-   - Add the fields above, setting `isAdmin` to `true`
-
-3. After deployment, you can use the application's admin interface to manage users
-
-### Firebase Security Rules
-
-Deploy the following security rules in your Firebase Console:
+Add these security rules to your Firebase Console for proper access control:
 
 ```javascript
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functions
-    function isAuthenticated() {
+    function isSignedIn() {
       return request.auth != null;
-    }
-
-    // Use a dedicated collection for authorization checks
-    function isAuthorizedUser() {
-      return isAuthenticated() && 
-        exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower()));
     }
     
     function isAdmin() {
-      return isAuthenticated() && 
-        exists(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower())) &&
-        get(/databases/$(database)/documents/authorized_users/$(request.auth.token.email.lower())).data.isAdmin == true;
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
-
-    // Authorized users collection - only admins can modify
-    match /authorized_users/{userId} {
-      allow read: if isAuthenticated();
+    
+    // Admins collection
+    match /admins/{userId} {
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
-
-    // Rest of your rules...
+    
+    // Employees collection
+    match /employees/{employeeId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    // Schedules collection
+    match /schedules/{scheduleId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
   }
 }
 ```
 
-### Security Best Practices
-
-1. **Environment Variables**: 
-   - Never commit `.env` files to version control
-   - Use `.env.example` as a template
-   - Keep API keys and secrets in environment variables
-
-2. **Authentication**:
-   - Only allow authorized users to access your application
-   - Implement proper role-based access control
-   - Regularly audit user access
-
-3. **Firestore Security**:
-   - Always use security rules to protect your data
-   - Follow the principle of least privilege
-   - Test your security rules thoroughly
-
-4. **Frontend Security**:
-   - Don't store sensitive information in localStorage or sessionStorage
-   - Implement proper input validation
-   - Use HTTPS for all communications
-
-5. **Deployment**:
-   - Regularly update dependencies
-   - Configure proper CORS settings
-   - Enable Firebase App Check in production
-
 ## Initial Setup
 
 1. After deploying, sign in with your Google account
-2. Add your email to the `authorized_users` collection in Firestore to grant access (with `isAdmin: true` field to get admin privileges)
+2. Add your user ID to the `admins` collection in Firestore to grant admin access
 3. Add initial employees through the Employee Management interface
 4. Create your first schedule through the Schedule Management interface
 
